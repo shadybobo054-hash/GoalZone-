@@ -1,0 +1,391 @@
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+
+  width: 100%;
+
+  background: rgba(8, 5, 18, 0.9);
+
+  border-bottom: 1px solid rgba(139, 92, 246, 0.16);
+
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.navbar-inner {
+  max-width: 1450px;
+  height: 78px;
+
+  margin: auto;
+  padding: 0 28px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 25px;
+}
+
+/* =========================
+   LOGO
+========================= */
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+
+  text-decoration: none;
+
+  border: 0;
+  outline: 0;
+
+  flex-shrink: 0;
+}
+
+/* =========================
+   NAVIGATION
+========================= */
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 4px;
+
+  direction: itl;
+}
+
+.nav-link {
+  position: relative;
+
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 11px 15px;
+
+  color: #8991a3;
+
+  background: transparent;
+  border: 0;
+  border-radius: 11px;
+
+  text-decoration: none;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 800;
+
+  white-space: nowrap;
+
+  transition: 0.25s ease;
+}
+
+.nav-link:hover {
+  color: #fff;
+
+  background: rgba(139, 92, 246, 0.09);
+
+  transform: translateY(-1px);
+}
+
+.nav-link.active {
+  color: #fff;
+
+  background: rgba(139, 92, 246, 0.12);
+}
+
+.nav-link.active::after {
+  content: "";
+
+  position: absolute;
+
+  left: 22%;
+  right: 22%;
+  bottom: 2px;
+
+  height: 3px;
+
+  border-radius: 20px;
+
+  background: #8b5cf6;
+
+  box-shadow:
+    0 0 10px rgba(139, 92, 246, 0.8),
+    0 0 18px rgba(139, 92, 246, 0.35);
+}
+
+/* =========================
+   LIVE
+========================= */
+
+.live-link {
+  color: #ff6478;
+}
+
+.live-link:hover {
+  color: #ff7d8d;
+
+  background: rgba(255, 48, 79, 0.08);
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+
+  display: inline-block;
+
+  border-radius: 50%;
+
+  background: #ff304f;
+
+  box-shadow:
+    0 0 7px #ff304f,
+    0 0 13px rgba(255, 48, 79, 0.45);
+
+  animation: livePulse 1.4s infinite;
+}
+
+@keyframes livePulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.45;
+    transform: scale(0.72);
+  }
+}
+
+/* =========================
+   ACTIONS
+========================= */
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  flex-shrink: 0;
+}
+
+.notification-btn,
+.favorites-btn {
+  position: relative;
+
+  width: 43px;
+  height: 43px;
+
+  display: grid;
+  place-items: center;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+
+  background: rgba(255, 255, 255, 0.04);
+
+  color: #fff;
+
+  text-decoration: none;
+
+  cursor: pointer;
+
+  transition: 0.25s ease;
+}
+
+.notification-btn {
+  font-size: 17px;
+}
+
+.favorites-btn {
+  font-size: 25px;
+  line-height: 1;
+}
+
+.notification-btn:hover,
+.favorites-btn:hover,
+.favorites-btn.active {
+  background: rgba(139, 92, 246, 0.13);
+
+  border-color: rgba(139, 92, 246, 0.35);
+
+  box-shadow:
+    0 0 16px rgba(139, 92, 246, 0.18);
+
+  transform: translateY(-2px);
+}
+
+/* =========================
+   NOTIFICATION BADGE
+========================= */
+
+.notification-badge {
+  position: absolute;
+
+  top: -5px;
+  right: -5px;
+
+  min-width: 17px;
+  height: 17px;
+
+  padding: 0 4px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  background: #8b5cf6;
+
+  color: #fff;
+
+  border: 2px solid #080512;
+
+  font-size: 9px;
+  font-weight: 900;
+}
+
+/* =========================
+   ONLINE STATUS
+========================= */
+
+.stadium-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 14px;
+
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 11px;
+
+  background: rgba(255, 255, 255, 0.035);
+
+  color: #7f889a;
+
+  font-size: 10px;
+  font-weight: 800;
+
+  letter-spacing: 0.5px;
+}
+
+.status-light {
+  width: 7px;
+  height: 7px;
+
+  border-radius: 50%;
+
+  background: #a78bfa;
+
+  box-shadow:
+    0 0 7px #8b5cf6,
+    0 0 12px rgba(139, 92, 246, 0.4);
+}
+
+/* =========================
+   PURPLE LINE
+========================= */
+
+.navbar-line {
+  height: 1px;
+
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(139, 92, 246, 0.5),
+    transparent
+  );
+}
+
+/* =========================
+   TABLET
+========================= */
+
+@media (max-width: 1050px) {
+  .navbar-inner {
+    padding: 0 18px;
+  }
+
+  .stadium-status {
+    display: none;
+  }
+
+  .nav-link {
+    padding: 10px 11px;
+    font-size: 12px;
+  }
+}
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 800px) {
+  .navbar-inner {
+    height: auto;
+    min-height: 70px;
+
+    padding: 10px 15px;
+
+    flex-wrap: wrap;
+  }
+
+  .navbar-logo {
+    margin-right: auto;
+  }
+
+  .navbar-links {
+    order: 3;
+
+    width: 100%;
+
+    padding: 7px 0 3px;
+
+    justify-content: flex-start;
+
+    overflow-x: auto;
+
+    scrollbar-width: none;
+  }
+
+  .navbar-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .nav-link {
+    padding: 10px 13px;
+  }
+}
+
+/* =========================
+   SMALL MOBILE
+========================= */
+
+@media (max-width: 500px) {
+  .navbar-inner {
+    padding: 9px 12px;
+  }
+
+  .gz-wordmark {
+    font-size: 17px;
+  }
+
+  .notification-btn,
+  .favorites-btn {
+    width: 40px;
+    height: 40px;
+  }
+
+  .nav-link {
+    font-size: 11px;
+    padding: 9px 11px;
+  }
+}

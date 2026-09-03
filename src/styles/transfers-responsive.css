@@ -1,0 +1,167 @@
+/* =====================================================
+   GOALZONE — TRANSFERS RESPONSIVE
+   ===================================================== */
+@keyframes spin {
+  from {
+    transform: rotate(0);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes spinReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0);
+  }
+}
+@keyframes footballFloat {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(3deg);
+  }
+}
+.orbit-1 {
+  animation: spin 18s linear infinite;
+}
+.orbit-2 {
+  animation: spinReverse 14s linear infinite;
+}
+.football {
+  animation: footballFloat 4s ease-in-out infinite;
+}
+@media (max-width: 1050px) {
+  .transfers-hero {
+    padding-left: 45px;
+    padding-right: 45px;
+  }
+  .hero-art {
+    width: 330px;
+    height: 330px;
+  }
+  .football {
+    width: 140px;
+    height: 140px;
+    font-size: 60px;
+  }
+  .orbit-1 {
+    width: 280px;
+    height: 280px;
+  }
+  .orbit-2 {
+    width: 210px;
+    height: 210px;
+  }
+  .orbit-3 {
+    width: 160px;
+    height: 160px;
+  }
+  .transfer-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 800px) {
+  .transfers-hero {
+    min-height: auto;
+    padding: 65px 25px 55px;
+  }
+  .hero-art {
+    display: none;
+  }
+  .hero-content {
+    max-width: 100%;
+  }
+  .hero-content h1 {
+    font-size: 65px;
+  }
+  .market-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .transfer-search {
+    width: 100%;
+  }
+  .transfer-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .transfers-hero {
+    padding: 50px 18px 45px;
+  }
+  .hero-tag {
+    font-size: 8px;
+  }
+  .hero-content h1 {
+    font-size: 50px;
+    letter-spacing: -3px;
+  }
+  .hero-content p {
+    font-size: 14px;
+  }
+  .transfer-market {
+    padding: 45px 15px 70px;
+  }
+  .transfer-stats {
+    gap: 9px;
+    margin-bottom: 50px;
+  }
+  .stat-box {
+    min-height: 85px;
+    gap: 9px;
+    padding: 12px;
+  }
+  .stat-symbol {
+    width: 39px;
+    height: 39px;
+    font-size: 16px;
+  }
+  .stat-box span {
+    font-size: 8px;
+  }
+  .stat-box strong {
+    font-size: 19px;
+  }
+  .market-title h2 {
+    font-size: 28px;
+  }
+  .transfer-filters {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .transfer-filters button {
+    flex-shrink: 0;
+    padding: 9px 13px;
+  }
+  .transfer-card {
+    padding: 17px;
+  }
+  .clubs {
+    gap: 6px;
+    padding: 13px 8px;
+  }
+  .club img,
+  .club-placeholder {
+    width: 30px;
+    height: 30px;
+  }
+  .club strong {
+    max-width: 70px;
+    font-size: 9px;
+  }
+  .transfer-arrow span {
+    width: 13px;
+  }
+  .empty-state {
+    min-height: 370px;
+    padding: 35px 17px;
+  }
+  .empty-state h3 {
+    font-size: 19px;
+  }
+}

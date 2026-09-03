@@ -1,0 +1,214 @@
+
+.matches-page{min-height:100vh;background:#080511;color:#fff}
+.matches-container{width:min(1180px,92%);margin:auto}
+
+.matches-hero{
+position:relative;overflow:hidden;padding:70px 0;
+background:radial-gradient(circle at 80% 40%,#7c3aed35,transparent 35%),#0d0718
+}
+
+.matches-hero-content{position:relative;z-index:2;max-width:650px}
+.matches-eyebrow,.section-label{
+color:#a78bfa;font-size:11px;font-weight:800;letter-spacing:2px
+}
+.matches-eyebrow span{
+display:inline-block;width:25px;height:3px;background:#8b5cf6;margin-right:8px
+}
+
+.matches-hero h1{
+font-size:65px;line-height:1;margin:15px 0;font-weight:900
+}
+.matches-hero h1 strong{display:block;color:#8b5cf6}
+.matches-hero p{color:#aaa;line-height:1.7}
+
+.selected-date-info{
+display:inline-flex;flex-direction:column;gap:5px;margin-top:20px;
+padding:12px 18px;background:#ffffff08;
+border:1px solid #ffffff12;border-radius:12px
+}
+.selected-date-info span{
+font-size:9px;color:#777;letter-spacing:1px
+}
+
+.calendar-section,.fixtures-section{padding:40px 0}
+
+.calendar-top,.fixtures-heading{
+display:flex;justify-content:space-between;align-items:end
+}
+
+.calendar-top h2,.fixtures-heading h2{
+margin:6px 0;font-size:24px
+}
+.calendar-top strong,.fixtures-heading strong{color:#a78bfa}
+
+.today-button,.details-button{
+border:1px solid #8b5cf655;background:#8b5cf612;
+color:#c4b5fd;border-radius:10px;padding:10px 16px;
+font-weight:800;cursor:pointer
+}
+
+.today-button:hover,.details-button:hover{
+background:#8b5cf6;color:#fff
+}
+
+.calendar{
+display:flex;align-items:center;gap:10px;margin-top:22px
+}
+
+.days{
+display:grid;grid-template-columns:repeat(7,1fr);
+gap:8px;flex:1
+}
+
+.day-card{
+position:relative;min-height:95px;
+border:1px solid #ffffff0c;border-radius:14px;
+background:#ffffff05;color:#fff;cursor:pointer
+}
+
+.day-card.active{
+background:linear-gradient(145deg,#8b5cf6,#6d28d9);
+box-shadow:0 10px 25px #7c3aed35
+}
+
+.day-name,.month{
+display:block;color:#888;font-size:11px
+}
+
+.day-card strong{
+display:block;font-size:27px;margin:7px
+}
+
+.today-tag{
+position:absolute;top:6px;right:6px;
+font-size:7px;color:#ddd
+}
+
+.calendar-arrow{
+width:40px;height:40px;border:1px solid #ffffff12;
+border-radius:10px;background:#ffffff06;
+color:#c4b5fd;font-size:28px;cursor:pointer
+}
+
+.league-block{
+margin-top:25px;border:1px solid #ffffff0d;
+border-radius:18px;overflow:hidden;background:#ffffff03
+}
+
+.league-header{
+display:flex;align-items:center;gap:12px;
+padding:15px 18px;background:#ffffff05
+}
+
+.league-icon{
+padding:10px;background:#8b5cf615;border-radius:10px
+}
+
+.league-header span{
+font-size:8px;color:#777
+}
+
+.league-header h3{
+margin:3px 0;font-size:15px
+}
+
+.league-total{
+margin-left:auto;font-size:9px;color:#777
+}
+
+.match-list{padding:10px}
+
+.match-card{
+display:grid;grid-template-columns:90px 1fr 90px;
+align-items:center;gap:15px;padding:18px;margin-bottom:8px;
+border:1px solid #ffffff08;border-radius:14px;background:#0d0915
+}
+
+.match-card:hover{border-color:#8b5cf640}
+
+.match-status{text-align:center}
+
+.match-status span{
+display:block;color:#777;font-size:9px
+}
+
+.match-status strong{
+display:block;margin-top:6px
+}
+
+.live-status{color:#ef4444!important}
+
+.live-status i{
+display:inline-block;width:6px;height:6px;
+background:#ef4444;border-radius:50%;margin-right:5px
+}
+
+.teams{
+display:grid;grid-template-columns:1fr 45px 1fr;
+align-items:center
+}
+
+.team{
+display:flex;align-items:center;
+justify-content:flex-end;gap:10px;
+font-size:13px;font-weight:700
+}
+
+.team.away{justify-content:flex-start}
+
+.team img,.team-placeholder{
+width:40px;height:40px;object-fit:contain
+}
+
+.team-placeholder{
+display:grid;place-items:center;
+background:#ffffff08;border-radius:10px
+}
+
+.score{font-size:20px}
+
+.vs{
+text-align:center;color:#777;font-size:9px
+}
+
+.matches-state{
+text-align:center;padding:70px 20px;color:#888
+}
+
+.state-icon{
+font-size:30px;margin-bottom:10px
+}
+
+.loading-spinner{
+width:35px;height:35px;margin:auto;
+border:3px solid #ffffff12;
+border-top-color:#8b5cf6;
+border-radius:50%;
+animation:spin .8s linear infinite
+}
+
+@keyframes spin{
+to{transform:rotate(360deg)}
+}
+
+@media(max-width:700px){
+.matches-hero h1{font-size:45px}
+
+.days{
+overflow:hidden;
+grid-template-columns:repeat(7,85px)
+}
+
+.match-card{
+grid-template-columns:1fr;
+gap:15px
+}
+
+.match-status{
+display:flex;
+justify-content:space-between
+}
+
+.details-button{width:100%}
+}
+

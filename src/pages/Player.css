@@ -1,0 +1,240 @@
+
+.player-page{
+  min-height:100vh;
+  padding:45px 7% 90px;
+  color:#fff;
+  background:
+    radial-gradient(circle at 80% 0,#22c55e20,transparent 35%),
+    #06100b;
+}
+
+.player-back{
+  margin-bottom:30px;
+  padding:11px 18px;
+  border:1px solid #22c55e35;
+  border-radius:12px;
+  background:#22c55e10;
+  color:#4ade80;
+  cursor:pointer;
+  font-weight:800;
+}
+
+.player-hero-card{
+  display:flex;
+  align-items:center;
+  gap:30px;
+  padding:35px;
+  border:1px solid #ffffff10;
+  border-radius:28px;
+  background:linear-gradient(145deg,#ffffff0d,#ffffff03);
+}
+
+.player-image{
+  width:170px;
+  height:170px;
+  display:grid;
+  place-items:center;
+  overflow:hidden;
+  border-radius:30px;
+  background:#22c55e15;
+  color:#22c55e;
+  font-size:55px;
+}
+
+.player-image img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+
+.player-main-info>span,
+.career-section>span{
+  color:#22c55e;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:2px;
+}
+
+.player-main-info h1{
+  margin:10px 0 15px;
+  font-size:clamp(35px,5vw,60px);
+}
+
+.player-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.player-meta b{
+  padding:8px 12px;
+  border-radius:10px;
+  background:#ffffff08;
+  font-size:12px;
+}
+
+.current-team{
+  margin-top:18px;
+}
+
+.current-team small{
+  display:block;
+  margin-bottom:5px;
+  color:#718078;
+}
+
+.current-team strong{
+  color:#4ade80;
+}
+
+.career-section{
+  width:min(900px,100%);
+  margin:55px auto 0;
+}
+
+.career-section h2{
+  margin:8px 0 30px;
+  font-size:32px;
+}
+
+.career-timeline{
+  position:relative;
+}
+
+.career-row{
+  position:relative;
+  display:flex;
+  gap:20px;
+  min-height:100px;
+}
+
+.career-line{
+  position:relative;
+  width:20px;
+  flex-shrink:0;
+  display:flex;
+  justify-content:center;
+}
+
+.career-line::before{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:2px;
+  background:#22c55e35;
+}
+
+.career-line span{
+  position:relative;
+  z-index:2;
+  width:12px;
+  height:12px;
+  margin-top:15px;
+  border-radius:50%;
+  background:#22c55e;
+  box-shadow:0 0 15px #22c55e;
+}
+
+.career-team{
+  flex:1;
+  display:flex;
+  align-items:center;
+  gap:15px;
+  margin-bottom:15px;
+  padding:16px;
+  border:1px solid #ffffff0b;
+  border-radius:17px;
+  background:#ffffff06;
+}
+
+.career-logo{
+  width:55px;
+  height:55px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:#22c55e10;
+  font-size:22px;
+}
+
+.career-logo img{
+  width:75%;
+  height:75%;
+  object-fit:contain;
+}
+
+.career-team h3{
+  margin:0 0 5px;
+}
+
+.career-team p{
+  margin:0;
+  color:#718078;
+  font-size:12px;
+}
+
+.player-state{
+  min-height:70vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+
+.player-state>span{
+  font-size:50px;
+}
+
+.player-state button{
+  padding:12px 25px;
+  border:0;
+  border-radius:12px;
+  background:#22c55e;
+  color:#06100b;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.player-loader{
+  width:42px;
+  height:42px;
+  border:3px solid #ffffff12;
+  border-top-color:#22c55e;
+  border-radius:50%;
+  animation:playerSpin .8s linear infinite;
+}
+
+@keyframes playerSpin{
+  to{transform:rotate(360deg)}
+}
+
+.career-empty{
+  padding:40px;
+  border:1px dashed #ffffff15;
+  border-radius:18px;
+  color:#718078;
+  text-align:center;
+}
+
+@media(max-width:650px){
+  .player-page{
+    padding:30px 5% 70px;
+  }
+
+  .player-hero-card{
+    flex-direction:column;
+    text-align:center;
+  }
+
+  .player-image{
+    width:140px;
+    height:140px;
+  }
+
+  .player-meta{
+    justify-content:center;
+  }
+}
+

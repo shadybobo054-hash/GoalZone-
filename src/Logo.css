@@ -1,0 +1,24 @@
+.gz-logo {
+  display: flex;
+  align-items: center;
+  height: 60px;
+}
+
+.gz-logo-svg {
+  width: 255px;
+  height: auto;
+  display: block;
+  overflow: visible;
+  transition: 0.25s ease;
+}
+
+.gz-logo:hover .gz-logo-svg {
+  transform: scale(1.03);
+  filter: drop-shadow(0 0 16px rgba(139, 92, 246, 0.45));
+}
+
+@media (max-width: 500px) {
+  .gz-logo-svg {
+    width: 210px;
+  }
+}
