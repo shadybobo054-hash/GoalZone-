@@ -1,9 +1,7 @@
-
 const BASE_URL =
   "https://site.api.espn.com/apis/site/v2/sports/soccer";
 
-const TRANSFER_BASE =
-  "https://raw.githubusercontent.com/eordo/transfermarkt-data/master";
+/* ================= LEAGUES ================= */
 
 export const LEAGUES = {
   premierLeague: "eng.1",
@@ -13,6 +11,8 @@ export const LEAGUES = {
   ligue1: "fra.1",
   championsLeague: "uefa.champions",
 } as const;
+
+/* ================= TYPES ================= */
 
 type Team = {
   id?: string;
@@ -34,12 +34,15 @@ export type ApiEvent = {
   date: string;
   name?: string;
   shortName?: string;
+
   league?: {
     id?: string;
     name?: string;
   };
+
   competitions?: Array<{
     competitors?: Competitor[];
+
     status?: {
       type?: {
         state?: string;
@@ -56,28 +59,16 @@ export type NewsArticle = {
   headline: string;
   description?: string;
   published?: string;
+
   links?: {
     web?: {
       href?: string;
     };
   };
+
   images?: Array<{
     url?: string;
   }>;
-};
-
-export type Transfer = {
-  id: string;
-  player: string;
-  from: string;
-  to: string;
-  date: string;
-  type: string;
-  fee: string;
-  playerImage: string;
-  fromLogo: string;
-  toLogo: string;
-  marketValue?: string;
 };
 
 export type MatchDetails = {
@@ -89,6 +80,8 @@ export type MatchDetails = {
   news?: NewsArticle[];
   boxscore?: unknown;
 };
+
+/* ================= REQUEST ================= */
 
 async function getJSON<T = any>(
   url: string
@@ -106,95 +99,174 @@ async function getJSON<T = any>(
 
 /* ================= MATCHES ================= */
 
+const matchCache =
+  new Map<string, ApiEvent[]>();
+
+const matchPromises =
+  new Map<string, Promise<ApiEvent[]>>();
+
+function getMatchCacheKey(
+  league: string,
+  date?: Date
+) {
+  if (!date) return league;
+
+  const year = date.getFullYear();
+
+  const month = String(
+    date.getMonth() + 1
+  ).padStart(2, "0");
+
+  const day = String(
+    date.getDate()
+  ).padStart(2, "0");
+
+  return `${league}-${year}${month}${day}`;
+}
+
 export async function getMatches(
   league: string,
   date?: Date
 ): Promise<ApiEvent[]> {
-  try {
-    let url =
-      `${BASE_URL}/${league}/scoreboard`;
+  const key =
+    getMatchCacheKey(league, date);
 
-    if (date) {
-      const year =
-        date.getFullYear();
+  if (matchCache.has(key)) {
+    return matchCache.get(key)!;
+  }
 
-      const month =
-        String(
+  if (matchPromises.has(key)) {
+    return matchPromises.get(key)!;
+  }
+
+  const promise = (async () => {
+    try {
+      let url =
+        `${BASE_URL}/${league}/scoreboard`;
+
+      if (date) {
+        const year =
+          date.getFullYear();
+
+        const month = String(
           date.getMonth() + 1
         ).padStart(2, "0");
 
-      const day =
-        String(
+        const day = String(
           date.getDate()
         ).padStart(2, "0");
 
-      const dateString =
-        `${year}${month}${day}`;
+        url +=
+          `?dates=${year}${month}${day}`;
+      }
 
-      url += `?dates=${dateString}`;
+      const data =
+        await getJSON(url);
+
+      const events =
+        data?.events || [];
+
+      matchCache.set(
+        key,
+        events
+      );
+
+      return events;
+    } catch (error) {
+      console.error(
+        "Matches API error:",
+        error
+      );
+
+      return [];
+    } finally {
+      matchPromises.delete(key);
     }
+  })();
 
-    const data =
-      await getJSON(url);
+  matchPromises.set(
+    key,
+    promise
+  );
 
-    return data?.events || [];
-  } catch (error) {
-    console.error(
-      "Matches API error:",
-      error
-    );
-
-    return [];
-  }
+  return promise;
 }
 
-export async function getFeaturedMatches(): Promise<ApiEvent[]> {
+/* ================= FEATURED ================= */
+
+let featuredCache:
+  | ApiEvent[]
+  | null = null;
+
+let featuredPromise:
+  | Promise<ApiEvent[]>
+  | null = null;
+
+export async function getFeaturedMatches() {
+  if (featuredCache !== null) {
+    return featuredCache;
+  }
+
+  if (featuredPromise) {
+    return featuredPromise;
+  }
+
+  featuredPromise = getMatches(
+    LEAGUES.premierLeague
+  ).then(matches => {
+    featuredCache =
+      matches.slice(0, 20);
+
+    return featuredCache;
+  });
+
   try {
-    const results =
-      await Promise.all(
-        Object.values(LEAGUES).map(
-          league => getMatches(league)
-        )
-      );
-
-    return results
-      .flat()
-      .slice(0, 20);
-  } catch (error) {
-    console.error(
-      "Featured matches error:",
-      error
-    );
-
-    return [];
+    return await featuredPromise;
+  } finally {
+    featuredPromise = null;
   }
 }
 
-export async function getLiveMatches(): Promise<ApiEvent[]> {
+/* ================= LIVE ================= */
+
+let liveCache:
+  | ApiEvent[]
+  | null = null;
+
+let livePromise:
+  | Promise<ApiEvent[]>
+  | null = null;
+
+export async function getLiveMatches() {
+  if (liveCache !== null) {
+    return liveCache;
+  }
+
+  if (livePromise) {
+    return livePromise;
+  }
+
+  livePromise = getMatches(
+    LEAGUES.premierLeague
+  ).then(matches => {
+    liveCache = matches.filter(
+      match =>
+        match.competitions?.[0]
+          ?.status?.type?.state ===
+        "in"
+    );
+
+    return liveCache;
+  });
+
   try {
-    const results =
-      await Promise.all(
-        Object.values(LEAGUES).map(
-          league => getMatches(league)
-        )
-      );
-
-    return results
-      .flat()
-      .filter(
-        match =>
-          match.competitions?.[0]
-            ?.status?.type?.state === "in"
-      );
-  } catch (error) {
-    console.error(
-      "Live matches error:",
-      error
-    );
-
-    return [];
+    return await livePromise;
+  } finally {
+    livePromise = null;
   }
 }
+
+/* ================= MATCH STATUS ================= */
 
 export function getMatchStatus(
   match: ApiEvent
@@ -240,6 +312,8 @@ export function getMatchStatus(
   };
 }
 
+/* ================= TEAMS ================= */
+
 export function getMatchTeams(
   match: ApiEvent
 ) {
@@ -252,6 +326,7 @@ export function getMatchTeams(
       team =>
         team.homeAway === "home"
     ),
+
     away: competitors.find(
       team =>
         team.homeAway === "away"
@@ -260,510 +335,160 @@ export function getMatchTeams(
 }
 
 /* ================= NEWS ================= */
+/*
+   NEWS = REQUEST واحد فقط
+*/
 
-export async function getNews(
-  league: string
-): Promise<NewsArticle[]> {
-  try {
-    const data =
-      await getJSON(
-        `${BASE_URL}/${league}/news`
-      );
+let newsCache:
+  | NewsArticle[]
+  | null = null;
 
-    return (
-      data?.articles ||
-      data?.news ||
-      []
-    );
-  } catch (error) {
-    console.error(
-      "News API error:",
-      error
-    );
+let newsPromise:
+  | Promise<NewsArticle[]>
+  | null = null;
 
-    return [];
+export async function getLatestNews() {
+  if (newsCache !== null) {
+    return newsCache;
   }
-}
 
-export async function getLatestNews(): Promise<
-  NewsArticle[]
-> {
-  try {
-    const results =
-      await Promise.all(
-        Object.values(LEAGUES).map(
-          getNews
-        )
-      );
+  if (newsPromise) {
+    return newsPromise;
+  }
 
-    const news =
-      results
-        .flat()
-        .filter(
-          item => item?.headline
+  newsPromise = (async () => {
+    try {
+      const data =
+        await getJSON(
+          `${BASE_URL}/${LEAGUES.premierLeague}/news`
         );
 
-    return [
-      ...new Map(
-        news.map(
-          (item, index) => [
-            item.id ||
-              `${item.headline}-${index}`,
-            item,
-          ]
-        )
-      ).values(),
-    ].slice(0, 30);
-  } catch (error) {
-    console.error(
-      "Latest news error:",
-      error
-    );
+      const articles: NewsArticle[] =
+        data?.articles ||
+        data?.news ||
+        [];
 
-    return [];
-  }
-}
+      const unique =
+        [
+          ...new Map(
+            articles
+              .filter(
+                article =>
+                  article?.headline
+              )
+              .map(
+                (article, index) => [
+                  article.id ||
+                    `${article.headline}-${index}`,
+                  article,
+                ]
+              )
+          ).values(),
+        ];
 
-/* ================= TRANSFERS ================= */
+      newsCache =
+        unique.slice(0, 30);
 
-const TRANSFER_FILES: Record<
-  string,
-  string
-> = {
-  "eng.1":
-    "premier_league/2025.csv",
+      return newsCache;
+    } catch (error) {
+      console.error(
+        "News API error:",
+        error
+      );
 
-  "esp.1":
-    "laliga/2025.csv",
+      newsCache = [];
 
-  "ger.1":
-    "bundesliga/2025.csv",
-
-  "ita.1":
-    "serie_a/2025.csv",
-
-  "fra.1":
-    "ligue_1/2025.csv",
-};
-
-function parseCSVLine(
-  line: string
-): string[] {
-  const result: string[] = [];
-
-  let value = "";
-  let quoted = false;
-
-  for (
-    let i = 0;
-    i < line.length;
-    i++
-  ) {
-    const char = line[i];
-
-    if (char === '"') {
-      if (
-        quoted &&
-        line[i + 1] === '"'
-      ) {
-        value += '"';
-        i++;
-      } else {
-        quoted = !quoted;
-      }
-
-      continue;
+      return [];
+    } finally {
+      newsPromise = null;
     }
+  })();
 
-    if (
-      char === "," &&
-      !quoted
-    ) {
-      result.push(
-        value.trim()
-      );
-
-      value = "";
-    } else {
-      value += char;
-    }
-  }
-
-  result.push(value.trim());
-
-  return result;
+  return newsPromise;
 }
 
-function parseCSV(
-  text: string
-): Record<string, string>[] {
-  const lines =
-    text
-      .replace(/\r/g, "")
-      .split("\n")
-      .filter(Boolean);
-
-  if (lines.length < 2) {
-    return [];
-  }
-
-  const headers =
-    parseCSVLine(lines[0]);
-
-  return lines
-    .slice(1)
-    .map(line => {
-      const values =
-        parseCSVLine(line);
-
-      const row: Record<
-        string,
-        string
-      > = {};
-
-      headers.forEach(
-        (header, index) => {
-          row[header] =
-            values[index] || "";
-        }
-      );
-
-      return row;
-    });
-}
-
-/* ================= IMAGES ================= */
-
-const imageCache =
-  new Map<string, string>();
-
-async function wikipediaImage(
-  name: string
-): Promise<string> {
-  if (!name) return "";
-
-  if (imageCache.has(name)) {
-    return imageCache.get(name)!;
-  }
-
-  try {
-    const url =
-      `https://en.wikipedia.org/w/api.php?` +
-      `action=query&generator=search` +
-      `&gsrsearch=${encodeURIComponent(name)}` +
-      `&gsrnamespace=0` +
-      `&gsrlimit=1` +
-      `&prop=pageimages` +
-      `&piprop=thumbnail` +
-      `&pithumbsize=300` +
-      `&format=json&origin=*`;
-
-    const data =
-      await getJSON(url);
-
-    const pages =
-      data?.query?.pages;
-
-    const first =
-      pages
-        ? Object.values(
-            pages
-          )[0] as any
-        : null;
-
-    const image =
-      first?.thumbnail?.source ||
-      "";
-
-    imageCache.set(
-      name,
-      image
-    );
-
-    return image;
-  } catch {
-    return "";
-  }
-}
-
-function formatFee(
-  fee: string
-): string {
-  if (
-    !fee ||
-    fee === "-" ||
-    fee === "0"
-  ) {
-    return "FREE";
-  }
-
-  const value =
-    Number(
-      fee.replace(
-        /[^\d.-]/g,
-        ""
-      )
-    );
-
-  if (
-    !Number.isFinite(value) ||
-    value <= 0
-  ) {
-    return "UNDISCLOSED";
-  }
-
-  if (
-    value >= 1_000_000_000
-  ) {
-    return `€${(
-      value /
-      1_000_000_000
-    ).toFixed(2)}B`;
-  }
-
-  if (
-    value >= 1_000_000
-  ) {
-    const m =
-      value / 1_000_000;
-
-    return `€${m
-      .toFixed(
-        m >= 10 ? 0 : 1
-      )}M`;
-  }
-
-  if (
-    value >= 1_000
-  ) {
-    return `€${(
-      value / 1_000
-    ).toFixed(0)}K`;
-  }
-
-  return `€${value}`;
-}
-
-async function createTransfer(
-  row: Record<string, string>,
-  league: string,
-  index: number
-): Promise<Transfer | null> {
-  const player =
-    row.player_name?.trim();
-
-  const club =
-    row.club?.trim();
-
-  const dealingClub =
-    row.dealing_club?.trim();
-
-  if (!player || !club) {
-    return null;
-  }
-
-  const movement =
-    row.movement
-      ?.trim()
-      .toLowerCase();
-
-  let from =
-    dealingClub || "—";
-
-  let to = club;
-
-  if (movement === "out") {
-    from = club;
-    to =
-      dealingClub || "—";
-  }
-
-  const playerId =
-    row.player_id || "";
-
-  const playerImage =
-    await wikipediaImage(
-      player
-    );
-
-  const fromLogo =
-    await wikipediaImage(
-      from
-    );
-
-  const toLogo =
-    await wikipediaImage(
-      to
-    );
-
-  const fee =
-    formatFee(row.fee);
-
-  const type =
-    row.is_loan === "1"
-      ? "LOAN"
-      : "TRANSFER";
-
-  return {
-    id:
-      playerId ||
-      `${league}-${player}-${index}`,
-
-    player,
-
-    from,
-
-    to,
-
-    date:
-      row.season || "2025",
-
-    type,
-
-    fee,
-
-    playerImage,
-
-    fromLogo,
-
-    toLogo,
-
-    marketValue:
-      row.market_value
-        ? formatFee(
-            row.market_value
-          )
-        : undefined,
-  };
-}
-
-async function getTransferFile(
-  league: string
-): Promise<Transfer[]> {
-  const file =
-    TRANSFER_FILES[league];
-
-  if (!file) return [];
-
-  try {
-    const response =
-      await fetch(
-        `${TRANSFER_BASE}/${file}`
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        `CSV ${response.status}`
-      );
-    }
-
-    const csv =
-      await response.text();
-
-    const rows =
-      parseCSV(csv);
-
-    const incoming =
-      rows.filter(
-        row =>
-          row.movement
-            ?.toLowerCase() ===
-          "in"
-      );
-
-    const transfers =
-      await Promise.all(
-        incoming.map(
-          (row, index) =>
-            createTransfer(
-              row,
-              league,
-              index
-            )
-        )
-      );
-
-    return transfers.filter(
-      (
-        item
-      ): item is Transfer =>
-        item !== null
-    );
-  } catch (error) {
-    console.error(
-      `Transfer file error ${league}:`,
-      error
-    );
-
-    return [];
-  }
-}
-
-export async function getTransfers(
-  league?: string
-): Promise<Transfer[]> {
-  try {
-    const leagues =
-      league &&
-      league !== "all"
-        ? [league]
-        : Object.keys(
-            TRANSFER_FILES
-          );
-
-    const results =
-      await Promise.all(
-        leagues.map(
-          getTransferFile
-        )
-      );
-
-    const all =
-      results.flat();
-
-    const unique = [
-      ...new Map(
-        all.map(item => [
-          `${item.player}-${item.from}-${item.to}`,
-          item,
-        ])
-      ).values(),
-    ];
-
-    return unique.slice(0, 100);
-  } catch (error) {
-    console.error(
-      "Transfers error:",
-      error
-    );
-
-    return [];
-  }
-}
-
-export async function getAllTransfers(): Promise<
-  Transfer[]
-> {
-  return getTransfers("all");
+/*
+   الكود القديم يقدر يستخدم
+   getNews(league)
+   وبرضه هيعمل Request واحد فقط.
+*/
+
+export async function getNews(
+  _league?: string
+) {
+  return getLatestNews();
 }
 
 /* ================= MATCH DETAILS ================= */
 
+const detailsCache =
+  new Map<
+    string,
+    MatchDetails | null
+  >();
+
+const detailsPromises =
+  new Map<
+    string,
+    Promise<MatchDetails | null>
+  >();
+
 export async function getMatchDetails(
   league: string,
   eventId: string
-): Promise<MatchDetails | null> {
-  try {
-    return await getJSON<MatchDetails>(
-      `${BASE_URL}/${league}/summary?event=${eventId}`
-    );
-  } catch (error) {
-    console.error(
-      "Match details error:",
-      error
-    );
-
-    return null;
+) {
+  if (detailsCache.has(eventId)) {
+    return detailsCache.get(eventId)!;
   }
+
+  if (detailsPromises.has(eventId)) {
+    return detailsPromises.get(eventId)!;
+  }
+
+  const promise =
+    (async () => {
+      try {
+        const data =
+          await getJSON<MatchDetails>(
+            `${BASE_URL}/${league}/summary?event=${eventId}`
+          );
+
+        detailsCache.set(
+          eventId,
+          data
+        );
+
+        return data;
+      } catch (error) {
+        console.error(
+          "Match details error:",
+          error
+        );
+
+        detailsCache.set(
+          eventId,
+          null
+        );
+
+        return null;
+      } finally {
+        detailsPromises.delete(
+          eventId
+        );
+      }
+    })();
+
+  detailsPromises.set(
+    eventId,
+    promise
+  );
+
+  return promise;
 }
 
+/* ================= TRANSFERS ================= */
+
+export {
+  getTransfers,
+  getAllTransfers,
+} from "./transferApi";
