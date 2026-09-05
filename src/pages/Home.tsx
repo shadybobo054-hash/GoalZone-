@@ -1,269 +1,314 @@
-
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { getFeaturedMatches } from "../api/footballApi";
+import type { Match } from "../api/footballApi";
+import Logo from "../components/Logo";
 import "./Home.css";
 
-function Home() {
+export default function Home() {
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getFeaturedMatches()
+      .then(setMatches)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
-    <main className="home-page">
-      <section className="home-hero">
-        <div className="hero-background">
-          <div className="hero-grid"></div>
-          <div className="hero-light hero-light-one"></div>
-          <div className="hero-light hero-light-two"></div>
+    <main className="home">
+
+      {/* HERO */}
+      <section className="hero">
+        <div className="flying-balls">
+          <span>⚽</span>
+          <span>⚽</span>
+          <span>⚽</span>
         </div>
 
         <div className="hero-content">
-          <div className="hero-label">
-            <span className="hero-live-dot"></span>
-            THE WORLD OF FOOTBALL
+          <div className="hero-brand">
+            <Logo />
+          </div>
+
+          <div className="badge">
+            ● FOOTBALL • LIVE • 24/7
           </div>
 
           <h1>
-            FOOTBALL <br />
-            <span>WITHOUT LIMITS</span>
+            EVERY MATCH.
+            <strong>EVERY MOMENT.</strong>
           </h1>
 
           <p>
-            كل ما يخص كرة القدم في مكان واحد. <br />
-            مباريات، نتائج، أخبار وانتقالات لحظة بلحظة.
+            Follow live scores, upcoming fixtures, transfers
+            and the biggest football moments — all in one place.
           </p>
 
-          <div className="hero-actions">
-            <Link to="/matches" className="hero-primary-btn">
-              <span>⚽</span>
-              مباريات اليوم
-              <b>→</b>
+          <div className="hero-buttons">
+            <Link to="/matches">
+              ⚽ Explore Matches
             </Link>
 
-            <Link to="/live" className="hero-live-btn">
-              <span className="live-indicator"></span>
-              LIVE MATCHES
+            <Link to="/live" className="live">
+              <span>●</span> Watch Live
             </Link>
           </div>
 
-          <div className="hero-stats">
-            <div className="hero-stat">
-              <strong>24/7</strong>
-              <span>FOOTBALL</span>
+          <div className="hero-mini-stats">
+            <div>
+              <b>LIVE</b>
+              <span>Scores</span>
             </div>
-
-            <div className="hero-stat-line"></div>
-
-            <div className="hero-stat">
-              <strong>LIVE</strong>
-              <span>UPDATES</span>
-            </div>
-
-            <div className="hero-stat-line"></div>
-
-            <div className="hero-stat">
-              <strong>WORLD</strong>
-              <span>COVERAGE</span>
-            </div>
-          </div>
-        </div>
-
-        {/* نفس كرة Transfers بالضبط */}
-        <div className="transfers-ball">⚽</div>
-
-        <div className="hero-visual">
-          <div className="floating-match floating-match-top">
-            <div className="floating-live">
-              <span></span>
-              LIVE
-            </div>
-
-            <div className="floating-teams">
-              <strong>ARS</strong>
-              <b>2 : 1</b>
-              <strong>CHE</strong>
-            </div>
-          </div>
-
-          <div className="floating-match floating-match-bottom">
-            <span className="floating-icon">🏆</span>
 
             <div>
-              <strong>PREMIER LEAGUE</strong>
-              <small>Match Center</small>
+              <b>85+</b>
+              <span>Leagues</span>
+            </div>
+
+            <div>
+              <b>24/7</b>
+              <span>Updates</span>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="quick-section">
-        <div className="section-heading">
+      {/* FEATURED MATCHES */}
+      <section className="section">
+
+        <div className="section-head">
           <div>
-            <span>GOALZONE CENTER</span>
-            <h2>Everything Football.</h2>
+            <small>⚡ MATCH CENTER</small>
+            <h2>Featured Matches</h2>
+            <p>Follow the action from around the world.</p>
           </div>
 
-          <p>تابع عالم كرة القدم من مكان واحد.</p>
-        </div>
-
-        <div className="quick-grid">
-          <Link to="/matches" className="quick-card quick-card-featured">
-            <div className="quick-card-top">
-              <span className="quick-number">01</span>
-              <span className="quick-arrow">↗</span>
-            </div>
-
-            <div className="quick-icon">⚽</div>
-
-            <h3>Matches</h3>
-
-            <p>
-              المباريات القادمة والنتائج وأهم تفاصيل كل مباراة.
-            </p>
-
-            <div className="quick-footer">
-              <span>EXPLORE MATCHES</span>
-              <b>→</b>
-            </div>
-          </Link>
-
-          <Link to="/live" className="quick-card quick-card-live">
-            <div className="quick-card-top">
-              <span className="quick-number">02</span>
-              <span className="quick-arrow">↗</span>
-            </div>
-
-            <div className="quick-icon live-icon">
-              <span></span>
-            </div>
-
-            <h3>Live</h3>
-
-            <p>
-              المباريات المباشرة والنتيجة والأحداث لحظة بلحظة.
-            </p>
-
-            <div className="quick-footer">
-              <span>WATCH LIVE</span>
-              <b>→</b>
-            </div>
-          </Link>
-
-          <Link to="/transfers" className="quick-card quick-card-transfer">
-            <div className="quick-card-top">
-              <span className="quick-number">03</span>
-              <span className="quick-arrow">↗</span>
-            </div>
-
-            <div className="quick-icon">↔</div>
-
-            <h3>Transfers</h3>
-
-            <p>
-              أحدث انتقالات اللاعبين وحركة سوق كرة القدم.
-            </p>
-
-            <div className="quick-footer">
-              <span>TRANSFER CENTER</span>
-              <b>→</b>
-            </div>
-          </Link>
-
-          <Link to="/news" className="quick-card quick-card-news">
-            <div className="quick-card-top">
-              <span className="quick-number">04</span>
-              <span className="quick-arrow">↗</span>
-            </div>
-
-            <div className="quick-icon">▤</div>
-
-            <h3>News</h3>
-
-            <p>
-              آخر الأخبار والتحديثات من عالم كرة القدم.
-            </p>
-
-            <div className="quick-footer">
-              <span>READ NEWS</span>
-              <b>→</b>
-            </div>
+          <Link to="/matches">
+            View All Matches →
           </Link>
         </div>
+
+        {loading ? (
+          <div className="loading">
+            <span>⚽</span>
+            Loading matches...
+          </div>
+        ) : (
+          <div className="matches-grid">
+
+            {matches.map((match) => {
+              const home = match.home;
+              const away = match.away;
+
+              /* LEAGUE SAFE */
+              const league =
+                typeof match.league === "object"
+                  ? match.league?.name
+                  : match.league;
+
+              /* STATUS SAFE */
+              const status =
+                typeof match.status === "object"
+                  ? match.status?.displayClock ||
+                    match.status?.type ||
+                    "Upcoming"
+                  : match.status || "Upcoming";
+
+              return (
+                <article
+                  className="match-card"
+                  key={match.id}
+                >
+
+                  {/* TOP */}
+                  <div className="match-top">
+
+                    <span className="league">
+                      {league || "Football"}
+                    </span>
+
+                    <span className="match-time">
+                      {match.time || "--:--"}
+                    </span>
+
+                  </div>
+
+                  {/* TEAMS */}
+                  <div className="teams">
+
+                    {/* HOME */}
+                    <div className="team">
+
+                      <div className="team-logo">
+                        {home?.logo ? (
+                          <img
+                            src={home.logo}
+                            alt={home.name || "Home team"}
+                          />
+                        ) : (
+                          <span>⚽</span>
+                        )}
+                      </div>
+
+                      <strong>
+                        {home?.name || "Home Team"}
+                      </strong>
+
+                      <small>
+                        HOME
+                      </small>
+
+                    </div>
+
+                    {/* VS */}
+                    <div className="vs">
+                      <span>VS</span>
+                      <i></i>
+                    </div>
+
+                    {/* AWAY */}
+                    <div className="team">
+
+                      <div className="team-logo">
+                        {away?.logo ? (
+                          <img
+                            src={away.logo}
+                            alt={away.name || "Away team"}
+                          />
+                        ) : (
+                          <span>⚽</span>
+                        )}
+                      </div>
+
+                      <strong>
+                        {away?.name || "Away Team"}
+                      </strong>
+
+                      <small>
+                        AWAY
+                      </small>
+
+                    </div>
+
+                  </div>
+
+                  {/* STATUS */}
+                  <div className="match-bottom">
+
+                    <span className="status-dot"></span>
+
+                    <span>
+                      {status}
+                    </span>
+
+                    <Link to={`/matches/${match.id}`}>
+                      Details →
+                    </Link>
+
+                  </div>
+
+                </article>
+              );
+            })}
+
+            {!matches.length && (
+              <div className="empty">
+
+                <div>⚽</div>
+
+                <strong>
+                  No matches available
+                </strong>
+
+                <span>
+                  Check back soon for upcoming matches.
+                </span>
+
+              </div>
+            )}
+
+          </div>
+        )}
       </section>
 
-      <section className="home-match-section">
-        <div className="match-section-header">
-          <div>
-            <span>TODAY'S FOOTBALL</span>
-            <h2>Match Center</h2>
-          </div>
+      {/* STATS */}
+      <section className="stats">
 
-          <Link to="/matches" className="view-all">
-            View all <b>→</b>
-          </Link>
+        <div>
+          <b>LIVE</b>
+          <span>Live Scores</span>
         </div>
 
-        <div className="featured-match">
-          <div className="match-league">
-            <span>PREMIER LEAGUE</span>
-            <small>Today • 20:00</small>
-          </div>
-
-          <div className="match-teams">
-            <div className="match-team">
-              <div className="team-logo">
-                <img
-                  src="https://a.espncdn.com/i/teamlogos/soccer/500/359.png"
-                  alt="Arsenal"
-                />
-              </div>
-
-              <strong>Arsenal</strong>
-              <small>Home</small>
-            </div>
-
-            <div className="match-center">
-              <span>VS</span>
-              <small>20:00</small>
-            </div>
-
-            <div className="match-team">
-              <div className="team-logo">
-                <img
-                  src="https://a.espncdn.com/i/teamlogos/soccer/500/363.png"
-                  alt="Chelsea"
-                />
-              </div>
-
-              <strong>Chelsea</strong>
-              <small>Away</small>
-            </div>
-          </div>
-
-          <Link to="/matches" className="match-details">
-            Details <span>→</span>
-          </Link>
+        <div>
+          <b>85+</b>
+          <span>Competitions</span>
         </div>
+
+        <div>
+          <b>24/7</b>
+          <span>Football Updates</span>
+        </div>
+
+        <div>
+          <b>∞</b>
+          <span>Football Passion</span>
+        </div>
+
       </section>
 
-      <section className="home-cta">
-        <div className="cta-glow"></div>
+      {/* CTA */}
+      <section className="cta">
 
-        <div className="cta-content">
-          <span>GOALZONE</span>
+        <div>
+          <small>
+            READY FOR KICK-OFF?
+          </small>
 
           <h2>
-            YOUR FOOTBALL. <br />
-            <strong>YOUR WORLD.</strong>
+            The game starts here.
           </h2>
 
-          <p>كل لحظة في كرة القدم تستحق أن تتابعها.</p>
-
-          <Link to="/matches" className="cta-button">
-            Explore Football <b>→</b>
-          </Link>
+          <p>
+            Discover matches, follow live scores and never
+            miss another football moment.
+          </p>
         </div>
 
-        <div className="cta-ball">⚽</div>
+        <Link to="/matches">
+          Enter Match Center →
+        </Link>
+
       </section>
+
+      {/* FOOTER */}
+      <footer>
+
+        <div>
+          <b>
+            GOAL<span>ZONE</span>
+          </b>
+
+          <p>
+            Your ultimate football center.
+          </p>
+        </div>
+
+        <nav>
+          <Link to="/">Home</Link>
+          <Link to="/matches">Matches</Link>
+          <Link to="/live">Live</Link>
+          <Link to="/transfers">Transfers</Link>
+          <Link to="/news">News</Link>
+        </nav>
+
+        <small>
+          © 2026 GOALZONE
+        </small>
+
+      </footer>
+
     </main>
   );
 }
-
-export default Home;
-

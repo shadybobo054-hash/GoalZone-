@@ -1,80 +1,75 @@
-import { NavLink } from "react-router-dom";
-import Logo from "../Logo";
+import { Link, NavLink } from "react-router-dom";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const navClass = ({ isActive }: { isActive: boolean }) =>
-    `nav-link ${isActive ? "active" : ""}`;
-
   return (
     <header className="navbar">
-      <div className="navbar-inner">
 
-        <NavLink to="/" className="navbar-logo">
-          <Logo />
+      {/* LOGO */}
+      <Link to="/" className="nav-logo">
+        <div className="nav-logo-box">
+          <span>⚽</span>
+        </div>
+
+        <div className="nav-brand">
+          <div>
+            <strong>GOAL</strong>
+            <em>ZONE</em>
+          </div>
+          <small>FOOTBALL MEDIA</small>
+        </div>
+      </Link>
+
+      {/* NAVIGATION */}
+      <nav className="nav-links">
+
+        <NavLink to="/" end>
+          <span className="nav-icon">⌂</span>
+          <span>Home</span>
         </NavLink>
 
-        <nav className="navbar-links">
+        <NavLink to="/matches">
+          <span className="nav-icon">◉</span>
+          <span>Matches</span>
+        </NavLink>
 
-          <NavLink to="/" className={navClass}>
-            Home
-          </NavLink>
+        <NavLink to="/live" className="live-link">
+          <span className="live-dot"></span>
+          <span>Live</span>
+        </NavLink>
 
-          <NavLink to="/matches" className={navClass}>
-            Matches
-          </NavLink>
+        <NavLink to="/transfers">
+          <span className="nav-icon">⇄</span>
+          <span>Transfers</span>
+        </NavLink>
 
-          <NavLink
-            to="/live"
-            className={({ isActive }) =>
-              `nav-link live-link ${isActive ? "active" : ""}`
-            }
-          >
-            <span className="live-dot" />
-            Live
-          </NavLink>
+        <NavLink to="/news">
+          <span className="nav-icon">▤</span>
+          <span>News</span>
+        </NavLink>
 
-          <NavLink to="/transfers" className={navClass}>
-            Transfers
-          </NavLink>
+        <NavLink to="/favorites">
+          <span className="nav-icon">♡</span>
+          <span>Favorites</span>
+        </NavLink>
 
-          <NavLink to="/news" className={navClass}>
-            News
-          </NavLink>
+      </nav>
 
-        </nav>
+      {/* ACTIONS */}
+      <div className="nav-actions">
 
-        <div className="navbar-actions">
+        <button className="notification" aria-label="Notifications">
+          <span>♢</span>
+          <i></i>
+        </button>
 
-          <button
-            type="button"
-            className="notification-btn"
-            aria-label="Notifications"
-          >
-            🔔
-            <span className="notification-badge">3</span>
-          </button>
-
-          <NavLink
-            to="/favorites"
-            className={({ isActive }) =>
-              `favorites-btn ${isActive ? "active" : ""}`
-            }
-            aria-label="Favorites"
-          >
-            ♡
-          </NavLink>
-
-          <div className="stadium-status">
-            <span className="status-light" />
-            <span>ONLINE</span>
-          </div>
-
-        </div>
+        <Link to="/live" className="live-button">
+          <span className="live-button-dot"></span>
+          LIVE
+        </Link>
 
       </div>
 
-      <div className="navbar-line" />
     </header>
   );
 }

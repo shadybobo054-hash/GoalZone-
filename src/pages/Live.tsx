@@ -1,252 +1,516 @@
 
 import { useEffect, useState } from "react";
 import {
-  getLiveMatches,
+  getMatches,
+  LEAGUES,
   type ApiEvent,
 } from "../api/footballApi";
 import "./Live.css";
 
-type LiveProps = {
-  onDetails: (match: ApiEvent) => void;
+const leagues = Object.values(LEAGUES);
+
+type TeamCompetitor = {
+  homeAway?: "home" | "away";
+  score?: string | number;
+  team?: {
+    displayName?: string;
+    logo?: string;
+  };
 };
 
-function Live({ onDetails }: LiveProps) {
-  const [matches, setMatches] = useState<ApiEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+const getTeam = (
+  match: ApiEvent,
+  side: "home" | "away"
+): TeamCompetitor | undefined => {
+  const competitors =
+    (match.competitions?.[0]?.competitors ||
+      []) as TeamCompetitor[];
 
-  const loadLive = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  return competitors.find(
+    (team: TeamCompetitor) =>
+      team.homeAway === side
+  );
+};
 
-      const data = await getLiveMatches();
-      setMatches(data);
-    } catch (err) {
-      console.error("Live Error:", err);
-      setError("فشل تحميل المباريات المباشرة.");
-    } finally {
-      setLoading(false);
-    }
-  };
+const isLive = (match: ApiEvent) =>
+  match.competitions?.[0]?.status?.type?.state === "in";
+
+const getMatchTime = (match: ApiEvent) => {
+  const type =
+    match.competitions?.[0]?.status?.type;
+
+  return (
+    type?.shortDetail ||
+    type?.detail ||
+    "LIVE"
+  );
+};
+
+export default function Live() {
+  const [matches, setMatches] =
+    useState<ApiEvent[]>([]);
+
+  const [loading, setLoading] =
+    useState(true);
 
   useEffect(() => {
-    loadLive();
+    const loadLiveMatches = async () => {
+      setLoading(true);
 
-    const interval = setInterval(loadLive, 30000);
+      try {
+        const results = await Promise.all(
+          leagues.map((league) =>
+            getMatches(league).catch(() => [])
+          )
+        );
 
-    return () => clearInterval(interval);
+        const liveMatches = results
+          .flat()
+          .filter((match: ApiEvent) =>
+            isLive(match)
+          );
+
+        const unique = [
+          ...new Map(
+            liveMatches.map(
+              (match: ApiEvent) => [
+                match.id,
+                match,
+              ]
+            )
+          ).values(),
+        ];
+
+        setMatches(unique);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLiveMatches();
   }, []);
+
+  const featured = matches[0];
+
+  const home = featured
+    ? getTeam(featured, "home")
+    : undefined;
+
+  const away = featured
+    ? getTeam(featured, "away")
+    : undefined;
 
   return (
     <main className="live-page">
+
+      {/* HERO */}
       <section className="live-hero">
-        <div className="live-hero-content">
-          <span className="live-label">
-            <i></i>
-            LIVE CENTER
-          </span>
 
-          <h1>
-            LIVE
-            <strong>MATCHES</strong>
-          </h1>
+        <div className="hero-grid" />
 
-          <p>
-            تابع المباريات الجارية حاليًا لحظة بلحظة.
-          </p>
+        <div className="hero-glow glow-one" />
+        <div className="hero-glow glow-two" />
 
-          <div className="live-stats">
-            <div className="live-stat">
-              <span className="stat-icon live-icon">●</span>
+        <div className="live-container live-hero-inner">
 
-              <div>
-                <strong>LIVE</strong>
-                <small>NOW PLAYING</small>
-              </div>
+          <div className="live-copy">
+
+            <div className="live-eyebrow">
+              <i />
+              GOALZONE · LIVE CENTER
             </div>
 
-            <div className="live-stat">
-              <span className="stat-icon">↻</span>
+            <h1>
+              THE ACTION
+              <strong>IS LIVE.</strong>
+            </h1>
 
-              <div>
-                <strong>30s</strong>
-                <small>AUTO UPDATE</small>
-              </div>
+            <p>
+              Follow live football scores, match events
+              and every important moment as it happens.
+            </p>
+
+            <div className="hero-meta">
+
+              <span>
+                <i />
+                ON AIR
+              </span>
+
+              <b>LIVE SCORES</b>
+              <b>MATCH EVENTS</b>
+
             </div>
 
-            <div className="live-stat">
-              <span className="stat-icon">⚽</span>
-
-              <div>
-                <strong>24/7</strong>
-                <small>FOOTBALL CENTER</small>
-              </div>
-            </div>
           </div>
+
+          {/* LIVE BOARD */}
+          <div className="live-board">
+
+            <div className="board-top">
+
+              <span>
+                LIVE BROADCAST
+              </span>
+
+              <b>
+                <i />
+                ON AIR
+              </b>
+
+            </div>
+
+            <div className="board-league">
+
+              <span>
+                {featured?.league?.name ||
+                  "GOALZONE LIVE"}
+              </span>
+
+              <strong>
+                {featured
+                  ? getMatchTime(featured)
+                  : "LIVE"}
+              </strong>
+
+            </div>
+
+            <div className="board-score">
+
+              {/* HOME */}
+              <div className="board-team">
+
+                {home?.team?.logo ? (
+                  <img
+                    src={home.team.logo}
+                    alt={
+                      home.team.displayName ||
+                      "Home"
+                    }
+                  />
+                ) : (
+                  <div className="fallback">
+                    H
+                  </div>
+                )}
+
+                <span>
+                  {home?.team?.displayName ||
+                    "HOME"}
+                </span>
+
+                <strong>
+                  {home?.score ?? "0"}
+                </strong>
+
+              </div>
+
+              {/* VS */}
+              <div className="board-vs">
+
+                <span>
+                  LIVE
+                </span>
+
+                <strong>
+                  VS
+                </strong>
+
+              </div>
+
+              {/* AWAY */}
+              <div className="board-team">
+
+                {away?.team?.logo ? (
+                  <img
+                    src={away.team.logo}
+                    alt={
+                      away.team.displayName ||
+                      "Away"
+                    }
+                  />
+                ) : (
+                  <div className="fallback">
+                    A
+                  </div>
+                )}
+
+                <span>
+                  {away?.team?.displayName ||
+                    "AWAY"}
+                </span>
+
+                <strong>
+                  {away?.score ?? "0"}
+                </strong>
+
+              </div>
+
+            </div>
+
+            {/* LIVE WAVE */}
+            <div className="wave">
+
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(
+                (item) => (
+                  <i key={item} />
+                )
+              )}
+
+            </div>
+
+            {/* STATS */}
+            <div className="board-stats">
+
+              <div>
+                <strong>
+                  {matches.length}
+                </strong>
+
+                <span>
+                  LIVE MATCHES
+                </span>
+              </div>
+
+              <div>
+                <strong>
+                  24/7
+                </strong>
+
+                <span>
+                  COVERAGE
+                </span>
+              </div>
+
+              <div>
+                <strong>
+                  REAL
+                </strong>
+
+                <span>
+                  TIME
+                </span>
+              </div>
+
+            </div>
+
+          </div>
+
         </div>
 
-        <div className="transfers-ball">⚽</div>
       </section>
 
-      <section className="live-content">
-        <div className="live-heading">
+      {/* LIVE MATCHES */}
+      <section className="live-section live-container">
+
+        <div className="section-head">
+
           <div>
-            <span>LIVE FOOTBALL</span>
+
+            <span>
+              LIVE FOOTBALL
+            </span>
 
             <h2>
-              المباريات <strong>المباشرة</strong>
+              Matches{" "}
+              <strong>
+                Live Now
+              </strong>
             </h2>
+
+            <p>
+              Follow every match as it happens.
+            </p>
+
           </div>
 
           <div className="live-count">
-            <i></i>
-            {matches.length} MATCHES
+
+            <i />
+
+            <strong>
+              {matches.length}
+            </strong>
+
+            <small>
+              LIVE
+            </small>
+
           </div>
+
         </div>
 
-        {loading && (
-          <div className="live-state">
-            <div className="live-loader"></div>
+        {/* LOADING */}
+        {loading ? (
 
-            <h3>جاري تحميل المباريات</h3>
+          <div className="live-state">
+
+            <div className="loader" />
+
+            <h3>
+              Scanning live matches...
+            </h3>
 
             <p>
-              نبحث عن المباريات المباشرة الآن...
+              Connecting to football live data.
             </p>
+
           </div>
-        )}
 
-        {!loading && error && (
+        ) : !matches.length ? (
+
+          /* EMPTY */
           <div className="live-state">
-            <div className="state-icon">⚠</div>
 
-            <h3>حدث خطأ</h3>
-
-            <p>{error}</p>
-
-            <button onClick={loadLive}>
-              إعادة المحاولة
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && matches.length === 0 && (
-          <div className="live-state">
-            <div className="state-icon">⚽</div>
-
-            <h3>لا توجد مباريات مباشرة الآن</h3>
+            <strong>
+              NO LIVE MATCHES
+            </strong>
 
             <p>
-              سيتم تحديث المباريات تلقائيًا كل 30 ثانية.
+              There are no matches being played right now.
             </p>
-          </div>
-        )}
 
-        {!loading && !error && matches.length > 0 && (
+          </div>
+
+        ) : (
+
+          /* MATCH CARDS */
           <div className="live-grid">
-            {matches.map((match) => {
-              const competition = match.competitions?.[0];
-              const teams = competition?.competitors ?? [];
 
-              const home = teams.find(
-                (team) => team.homeAway === "home"
-              );
+            {matches.map(
+              (match: ApiEvent) => {
 
-              const away = teams.find(
-                (team) => team.homeAway === "away"
-              );
+                const homeTeam =
+                  getTeam(match, "home");
 
-              return (
-                <article
-                  className="live-card"
-                  key={match.id}
-                >
-                  <div className="live-card-top">
-                    <span className="live-now">
-                      <i></i>
-                      LIVE NOW
-                    </span>
+                const awayTeam =
+                  getTeam(match, "away");
 
-                    <small>
-                      {competition?.status?.type
-                        ?.shortDetail || "LIVE"}
-                    </small>
-                  </div>
-
-                  <div className="live-teams">
-                    <div className="live-team">
-                      <div className="team-logo">
-                        {home?.team.logo ? (
-                          <img
-                            src={home.team.logo}
-                            alt={home.team.displayName}
-                          />
-                        ) : (
-                          "⚽"
-                        )}
-                      </div>
-
-                      <strong>
-                        {home?.team.displayName ||
-                          "Home Team"}
-                      </strong>
-
-                      <span>HOME</span>
-                    </div>
-
-                    <div className="live-score">
-                      <b>{home?.score ?? "0"}</b>
-
-                      <em>:</em>
-
-                      <b>{away?.score ?? "0"}</b>
-
-                      <span>LIVE</span>
-                    </div>
-
-                    <div className="live-team">
-                      <div className="team-logo">
-                        {away?.team.logo ? (
-                          <img
-                            src={away.team.logo}
-                            alt={away.team.displayName}
-                          />
-                        ) : (
-                          "⚽"
-                        )}
-                      </div>
-
-                      <strong>
-                        {away?.team.displayName ||
-                          "Away Team"}
-                      </strong>
-
-                      <span>AWAY</span>
-                    </div>
-                  </div>
-
-                  <div className="live-card-footer">
-                    {match.name ||
-                      "Live Football Match"}
-                  </div>
-
-                  <button
-                    type="button"
-                    className="live-details-btn"
-                    onClick={() => onDetails(match)}
+                return (
+                  <article
+                    className="live-card"
+                    key={match.id}
                   >
-                    <span>تفاصيل المباراة</span>
-                    <b>→</b>
-                  </button>
-                </article>
-              );
-            })}
+
+                    <div className="card-top">
+
+                      <span>
+                        <i />
+                        LIVE
+                      </span>
+
+                      <small>
+                        {match.league?.name ||
+                          "Football"}
+                      </small>
+
+                    </div>
+
+                    <div className="card-teams">
+
+                      {/* HOME */}
+                      <div className="card-team">
+
+                        {homeTeam?.team?.logo ? (
+                          <img
+                            src={
+                              homeTeam.team.logo
+                            }
+                            alt={
+                              homeTeam.team
+                                .displayName ||
+                              "Home"
+                            }
+                          />
+                        ) : (
+                          <div className="fallback">
+                            H
+                          </div>
+                        )}
+
+                        <strong>
+                          {homeTeam?.team
+                            ?.displayName ||
+                            "Home"}
+                        </strong>
+
+                        <b>
+                          {homeTeam?.score ?? "0"}
+                        </b>
+
+                      </div>
+
+                      {/* CENTER */}
+                      <div className="card-vs">
+
+                        <span>
+                          LIVE
+                        </span>
+
+                        <strong>
+                          {getMatchTime(match)}
+                        </strong>
+
+                      </div>
+
+                      {/* AWAY */}
+                      <div className="card-team">
+
+                        {awayTeam?.team?.logo ? (
+                          <img
+                            src={
+                              awayTeam.team.logo
+                            }
+                            alt={
+                              awayTeam.team
+                                .displayName ||
+                              "Away"
+                            }
+                          />
+                        ) : (
+                          <div className="fallback">
+                            A
+                          </div>
+                        )}
+
+                        <strong>
+                          {awayTeam?.team
+                            ?.displayName ||
+                            "Away"}
+                        </strong>
+
+                        <b>
+                          {awayTeam?.score ?? "0"}
+                        </b>
+
+                      </div>
+
+                    </div>
+
+                    <div className="card-footer">
+
+                      <span>
+                        LIVE SCORE
+                      </span>
+
+                      <button>
+                        VIEW MATCH →
+                      </button>
+
+                    </div>
+
+                  </article>
+                );
+              }
+            )}
+
           </div>
+
         )}
+
       </section>
+
     </main>
   );
 }
 
-export default Live;
