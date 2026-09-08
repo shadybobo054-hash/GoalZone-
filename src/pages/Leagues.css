@@ -1,0 +1,104 @@
+.leagues-page {
+  min-height: 100vh;
+  padding: 120px 6% 60px;
+  background: #090611;
+  color: #fff;
+}
+
+.leagues-hero {
+  text-align: center;
+  margin-bottom: 45px;
+}
+
+.leagues-hero span {
+  color: #a855f7;
+  font-weight: 800;
+  letter-spacing: 3px;
+}
+
+.leagues-hero h1 {
+  margin: 8px 0;
+  font-size: clamp(36px, 5vw, 62px);
+}
+
+.leagues-hero p {
+  margin: 0;
+  color: #aaa;
+}
+
+.leagues-grid {
+  max-width: 1200px;
+  margin: auto;
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(250px, 1fr));
+  gap: 18px;
+}
+
+.league-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid #ffffff12;
+  border-radius: 20px;
+  background: #ffffff08;
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: .25s;
+}
+
+.league-card:hover {
+  transform: translateY(-6px);
+  border-color: #a855f7;
+  box-shadow: 0 15px 40px #0009;
+}
+
+.league-icon {
+  width: 62px;
+  height: 62px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.league-icon img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+}
+
+.league-icon span {
+  font-size: 28px;
+}
+
+.league-info {
+  min-width: 0;
+}
+
+.league-info h2 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.league-info p {
+  margin: 5px 0 0;
+  color: #999;
+  font-size: 14px;
+}
+
+.league-arrow {
+  margin-left: auto;
+  color: #a855f7;
+  font-size: 25px;
+}
+
+.leagues-loading {
+  min-height: 60vh;
+  display: grid;
+  place-items: center;
+  font-size: 22px;
+}

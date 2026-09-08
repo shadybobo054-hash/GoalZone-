@@ -1,314 +1,369 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { getFeaturedMatches } from "../api/footballApi";
-import type { Match } from "../api/footballApi";
-import Logo from "../components/Logo";
+import {
+  getFeaturedMatches,
+  type ApiEvent,
+} from "../api/footballApi";
+import HeroLogo from "../components/Logo";
 import "./Home.css";
 
 export default function Home() {
-  const [matches, setMatches] = useState<Match[]>([]);
+  const [matches, setMatches] = useState<ApiEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getFeaturedMatches()
       .then(setMatches)
-      .catch(console.error)
+      .catch((error) => {
+        console.error("Featured matches error:", error);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <main className="home">
 
-      {/* HERO */}
+      {/* ================= HERO ================= */}
       <section className="hero">
-        <div className="flying-balls">
-          <span>⚽</span>
-          <span>⚽</span>
-          <span>⚽</span>
-        </div>
+
+        {/* CSS Stadium */}
+        <div className="stadium-lights" />
+
+        <div className="hero-glow glow-1" />
+        <div className="hero-glow glow-2" />
+        <div className="hero-grid" />
 
         <div className="hero-content">
+
+          {/* LEFT */}
+          <div className="hero-copy">
+
+            <div className="badge">
+              <span className="badge-dot" />
+              FOOTBALL • LIVE • 24/7
+            </div>
+
+            <h1>
+              EVERY MATCH.
+              <strong>EVERY MOMENT.</strong>
+            </h1>
+
+            <p>
+              Follow live scores, upcoming fixtures, transfers
+              and the biggest football moments — all in one place.
+            </p>
+
+            <div className="hero-buttons">
+
+              <Link
+                to="/matches"
+                className="primary-btn"
+              >
+                <span>⚽</span>
+                Explore Matches
+                <b>→</b>
+              </Link>
+
+              <Link
+                to="/live"
+                className="live-btn"
+              >
+                <i />
+                Watch Live
+              </Link>
+
+            </div>
+
+            <div className="hero-mini-stats">
+
+              <div className="mini-stat">
+                <b>LIVE</b>
+                <span>Scores</span>
+              </div>
+
+              <div className="mini-stat">
+                <b>85+</b>
+                <span>Leagues</span>
+              </div>
+
+              <div className="mini-stat">
+                <b>24/7</b>
+                <span>Updates</span>
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* RIGHT */}
           <div className="hero-brand">
-            <Logo />
+            <HeroLogo />
           </div>
 
-          <div className="badge">
-            ● FOOTBALL • LIVE • 24/7
-          </div>
-
-          <h1>
-            EVERY MATCH.
-            <strong>EVERY MOMENT.</strong>
-          </h1>
-
-          <p>
-            Follow live scores, upcoming fixtures, transfers
-            and the biggest football moments — all in one place.
-          </p>
-
-          <div className="hero-buttons">
-            <Link to="/matches">
-              ⚽ Explore Matches
-            </Link>
-
-            <Link to="/live" className="live">
-              <span>●</span> Watch Live
-            </Link>
-          </div>
-
-          <div className="hero-mini-stats">
-            <div>
-              <b>LIVE</b>
-              <span>Scores</span>
-            </div>
-
-            <div>
-              <b>85+</b>
-              <span>Leagues</span>
-            </div>
-
-            <div>
-              <b>24/7</b>
-              <span>Updates</span>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* FEATURED MATCHES */}
-      <section className="section">
+      {/* ================= FEATURED ================= */}
+      <section className="featured-section">
 
-        <div className="section-head">
+        <div className="section-heading">
+
           <div>
-            <small>⚡ MATCH CENTER</small>
-            <h2>Featured Matches</h2>
-            <p>Follow the action from around the world.</p>
+            <span className="section-kicker">
+              MATCH CENTER
+            </span>
+
+            <h2>
+              Featured <strong>Matches</strong>
+            </h2>
           </div>
 
-          <Link to="/matches">
-            View All Matches →
+          <Link
+            to="/matches"
+            className="view-all"
+          >
+            View All
+            <span>→</span>
           </Link>
+
         </div>
 
         {loading ? (
-          <div className="loading">
-            <span>⚽</span>
-            Loading matches...
+
+          <div className="matches-loading">
+            <div className="loading-spinner" />
+            <span>Loading matches...</span>
           </div>
-        ) : (
-          <div className="matches-grid">
 
-            {matches.map((match) => {
-              const home = match.home;
-              const away = match.away;
+        ) : matches.length > 0 ? (
 
-              /* LEAGUE SAFE */
-              const league =
-                typeof match.league === "object"
-                  ? match.league?.name
-                  : match.league;
+          <div className="home-matches-grid">
 
-              /* STATUS SAFE */
-              const status =
-                typeof match.status === "object"
-                  ? match.status?.displayClock ||
-                    match.status?.type ||
-                    "Upcoming"
-                  : match.status || "Upcoming";
+            {matches.slice(0, 6).map((match) => {
+
+              const competitors =
+                match.competitions?.[0]?.competitors || [];
+
+              const homeTeam =
+                competitors.find(
+                  (team) => team.homeAway === "home"
+                );
+
+              const awayTeam =
+                competitors.find(
+                  (team) => team.homeAway === "away"
+                );
 
               return (
-                <article
-                  className="match-card"
+                <div
+                  className="home-match-card"
                   key={match.id}
                 >
 
-                  {/* TOP */}
-                  <div className="match-top">
-
-                    <span className="league">
-                      {league || "Football"}
-                    </span>
-
-                    <span className="match-time">
-                      {match.time || "--:--"}
-                    </span>
-
-                  </div>
-
-                  {/* TEAMS */}
-                  <div className="teams">
-
-                    {/* HOME */}
-                    <div className="team">
-
-                      <div className="team-logo">
-                        {home?.logo ? (
-                          <img
-                            src={home.logo}
-                            alt={home.name || "Home team"}
-                          />
-                        ) : (
-                          <span>⚽</span>
-                        )}
-                      </div>
-
-                      <strong>
-                        {home?.name || "Home Team"}
-                      </strong>
-
-                      <small>
-                        HOME
-                      </small>
-
-                    </div>
-
-                    {/* VS */}
-                    <div className="vs">
-                      <span>VS</span>
-                      <i></i>
-                    </div>
-
-                    {/* AWAY */}
-                    <div className="team">
-
-                      <div className="team-logo">
-                        {away?.logo ? (
-                          <img
-                            src={away.logo}
-                            alt={away.name || "Away team"}
-                          />
-                        ) : (
-                          <span>⚽</span>
-                        )}
-                      </div>
-
-                      <strong>
-                        {away?.name || "Away Team"}
-                      </strong>
-
-                      <small>
-                        AWAY
-                      </small>
-
-                    </div>
-
-                  </div>
-
-                  {/* STATUS */}
-                  <div className="match-bottom">
-
-                    <span className="status-dot"></span>
+                  <div className="match-card-top">
 
                     <span>
-                      {status}
+                      {match.league?.name || "Football"}
                     </span>
 
-                    <Link to={`/matches/${match.id}`}>
+                    <span className="match-status">
+  UPCOMING
+</span>
+
+                  </div>
+
+                  <div className="teams">
+
+                    <div className="team">
+
+                      <div className="team-logo">
+
+                        {homeTeam?.team?.logo ? (
+
+                          <img
+                            src={homeTeam.team.logo}
+                            alt={
+                              homeTeam.team.displayName
+                            }
+                          />
+
+                        ) : (
+                          "⚽"
+                        )}
+
+                      </div>
+
+                      <strong>
+                        {homeTeam?.team?.shortDisplayName ||
+                          "Home"}
+                      </strong>
+
+                    </div>
+
+                    <div className="match-time">
+                      <span>VS</span>
+                    </div>
+
+                    <div className="team">
+
+                      <div className="team-logo">
+
+                        {awayTeam?.team?.logo ? (
+
+                          <img
+                            src={awayTeam.team.logo}
+                            alt={
+                              awayTeam.team.displayName
+                            }
+                          />
+
+                        ) : (
+                          "⚽"
+                        )}
+
+                      </div>
+
+                      <strong>
+                        {awayTeam?.team?.shortDisplayName ||
+                          "Away"}
+                      </strong>
+
+                    </div>
+
+                  </div>
+
+                  <div className="match-card-bottom">
+
+                    <span>
+                      {match.date
+                        ? new Date(
+                            match.date
+                          ).toLocaleDateString()
+                        : "TBA"}
+                    </span>
+
+                    <Link to="/matches">
                       Details →
                     </Link>
 
                   </div>
 
-                </article>
+                </div>
               );
             })}
 
-            {!matches.length && (
-              <div className="empty">
+          </div>
 
-                <div>⚽</div>
+        ) : (
 
-                <strong>
-                  No matches available
-                </strong>
+          <div className="empty-matches">
 
-                <span>
-                  Check back soon for upcoming matches.
-                </span>
+            <span>⚽</span>
 
-              </div>
-            )}
+            <h3>
+              No featured matches
+            </h3>
+
+            <p>
+              Check the matches page for the latest fixtures.
+            </p>
+
+            <Link to="/matches">
+              View Matches →
+            </Link>
 
           </div>
+
         )}
-      </section>
-
-      {/* STATS */}
-      <section className="stats">
-
-        <div>
-          <b>LIVE</b>
-          <span>Live Scores</span>
-        </div>
-
-        <div>
-          <b>85+</b>
-          <span>Competitions</span>
-        </div>
-
-        <div>
-          <b>24/7</b>
-          <span>Football Updates</span>
-        </div>
-
-        <div>
-          <b>∞</b>
-          <span>Football Passion</span>
-        </div>
 
       </section>
 
-      {/* CTA */}
-      <section className="cta">
+      {/* ================= FEATURES ================= */}
+      <section className="features-section">
 
-        <div>
-          <small>
-            READY FOR KICK-OFF?
-          </small>
+        <div className="feature-card">
+
+          <span className="feature-icon">
+            ⚡
+          </span>
+
+          <h3>
+            Live Scores
+          </h3>
+
+          <p>
+            Follow matches and scores as they happen.
+          </p>
+
+        </div>
+
+        <div className="feature-card">
+
+          <span className="feature-icon">
+            🔄
+          </span>
+
+          <h3>
+            Transfers
+          </h3>
+
+          <p>
+            Stay updated with the latest football transfers.
+          </p>
+
+        </div>
+
+        <div className="feature-card">
+
+          <span className="feature-icon">
+            📰
+          </span>
+
+          <h3>
+            Football News
+          </h3>
+
+          <p>
+            Get the biggest football stories in one place.
+          </p>
+
+        </div>
+
+      </section>
+
+      {/* ================= CTA ================= */}
+      <section className="home-cta">
+
+        <div className="cta-glow" />
+
+        <div className="cta-content">
+
+          <span>
+            GOALZONE
+          </span>
 
           <h2>
-            The game starts here.
+            Football Never Stops.
           </h2>
 
           <p>
-            Discover matches, follow live scores and never
-            miss another football moment.
+            Every match. Every goal. Every moment.
           </p>
-        </div>
 
-        <Link to="/matches">
-          Enter Match Center →
-        </Link>
+          <Link
+            to="/matches"
+            className="cta-button"
+          >
+            Explore Matches
+            <b>→</b>
+          </Link>
+
+        </div>
 
       </section>
-
-      {/* FOOTER */}
-      <footer>
-
-        <div>
-          <b>
-            GOAL<span>ZONE</span>
-          </b>
-
-          <p>
-            Your ultimate football center.
-          </p>
-        </div>
-
-        <nav>
-          <Link to="/">Home</Link>
-          <Link to="/matches">Matches</Link>
-          <Link to="/live">Live</Link>
-          <Link to="/transfers">Transfers</Link>
-          <Link to="/news">News</Link>
-        </nav>
-
-        <small>
-          © 2026 GOALZONE
-        </small>
-
-      </footer>
 
     </main>
   );
 }
+

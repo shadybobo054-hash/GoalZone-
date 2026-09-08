@@ -16,6 +16,7 @@ export default function Navbar() {
             <strong>GOAL</strong>
             <em>ZONE</em>
           </div>
+
           <small>FOOTBALL MEDIA</small>
         </div>
       </Link>
@@ -38,6 +39,11 @@ export default function Navbar() {
           <span>Live</span>
         </NavLink>
 
+        <NavLink to="/leagues">
+          <span className="nav-icon">🏆</span>
+          <span>Leagues</span>
+        </NavLink>
+
         <NavLink to="/transfers">
           <span className="nav-icon">⇄</span>
           <span>Transfers</span>
@@ -58,12 +64,18 @@ export default function Navbar() {
       {/* ACTIONS */}
       <div className="nav-actions">
 
-        <button className="notification" aria-label="Notifications">
+        <button
+          className="notification"
+          aria-label="Notifications"
+        >
           <span>♢</span>
           <i></i>
         </button>
 
-        <Link to="/live" className="live-button">
+        <Link
+          to="/live"
+          className="live-button"
+        >
           <span className="live-button-dot"></span>
           LIVE
         </Link>

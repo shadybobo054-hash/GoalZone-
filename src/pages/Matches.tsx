@@ -1,735 +1,247 @@
-import { useEffect, useMemo, useState } from "react";
-import {
-  getMatches,
-  LEAGUES,
-  type ApiEvent,
-} from "../api/footballApi";
+import { useEffect, useState } from "react";
 import "./Matches.css";
 
-const LEAGUES_LIST = Object.values(LEAGUES);
-
-type TeamCompetitor = {
-  homeAway?: "home" | "away";
-  score?: string | number;
-  team?: {
-    displayName?: string;
-    logo?: string;
-  };
+type League = {
+  league_id: string;
+  league_name: string;
+  country: string;
+  matches_count: number;
 };
 
-const getTeam = (
-  match: ApiEvent,
-  side: "home" | "away"
-): TeamCompetitor | undefined => {
-  const competitors =
-    (match.competitions?.[0]?.competitors ||
-      []) as TeamCompetitor[];
-
-  return competitors.find(
-    team => team.homeAway === side
-  );
+type Match = {
+  id: number;
+  league_name?: string;
+  country?: string;
+  home_team: string;
+  away_team: string;
+  home_logo?: string;
+  away_logo?: string;
+  match_date?: string;
+  status?: string;
+  score_home?: number;
+  score_away?: number;
 };
 
-const getLeagueName = (match: ApiEvent) =>
-  match.league?.name || "Football";
-
-const dateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
-
-  return `${year}-${month}-${day}`;
+const leagueLogos: Record<string, string> = {
+  "eng.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png",
+  "esp.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png",
+  "ger.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/10.png",
+  "ita.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png",
+  "fra.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/9.png",
+  "ned.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/11.png",
+  "por.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/14.png",
+  "tur.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/18.png",
+  "sco.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/24.png",
+  "mex.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/22.png",
+  "bra.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/8.png",
+  "arg.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/13.png",
+  "usa.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/19.png",
+  "jpn.1": "https://a.espncdn.com/i/leaguelogos/soccer/500/21.png",
+  "uefa.champions":
+    "https://a.espncdn.com/i/leaguelogos/soccer/500/2.png",
+  "uefa.europa":
+    "https://a.espncdn.com/i/leaguelogos/soccer/500/2310.png",
+  "uefa.europa.conf":
+    "https://a.espncdn.com/i/leaguelogos/soccer/500/2022.png",
 };
 
-const formatDate = (date: Date) =>
-  new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  }).format(date);
-
-const getStatus = (match: ApiEvent) => {
-  const status =
-    match.competitions?.[0]?.status?.type;
-
-  if (status?.state === "in") {
-    return "LIVE";
-  }
-
-  if (status?.state === "post") {
-    return "FT";
-  }
-
-  return (
-    status?.shortDetail ||
-    status?.detail ||
-    "UPCOMING"
-  );
-};
-
-const getTime = (match: ApiEvent) => {
-  if (!match.date) return "--:--";
-
-  return new Intl.DateTimeFormat("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(match.date));
-};
+function getLeagueLogo(id: string) {
+  return leagueLogos[id] || "";
+}
 
 export default function Matches() {
-  const [selectedDate, setSelectedDate] =
-    useState(new Date());
+  const [leagues, setLeagues] = useState<League[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [selectedLeague, setSelectedLeague] = useState<League | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const [matches, setMatches] =
-    useState<ApiEvent[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [error, setError] =
-    useState(false);
-
-  const dates = useMemo(() => {
-    const list: Date[] = [];
-
-    for (let i = -2; i <= 4; i++) {
-      const date = new Date();
-      date.setHours(12, 0, 0, 0);
-      date.setDate(
-        date.getDate() + i
-      );
-      list.push(date);
-    }
-
-    return list;
+  useEffect(() => {
+    fetch("http://localhost:5000/api/leagues")
+      .then((res) => res.json())
+      .then((data) => setLeagues(Array.isArray(data) ? data : []))
+      .catch(console.error)
+      .finally(() => setLoading(false));
   }, []);
 
-  const loadMatches = async () => {
+  const openLeague = async (league: League) => {
+    setSelectedLeague(league);
     setLoading(true);
-    setError(false);
 
     try {
-      const result =
-        await Promise.all(
-          LEAGUES_LIST.map(league =>
-            getMatches(
-              league,
-              selectedDate
-            ).catch(() => [])
-          )
-        );
-
-      const allMatches =
-        result
-          .flat()
-          .filter(
-            (match: ApiEvent) =>
-              match?.id
-          );
-
-      const unique = [
-        ...new Map(
-          allMatches.map(match => [
-            match.id,
-            match,
-          ])
-        ).values(),
-      ];
-
-      setMatches(unique);
-    } catch (err) {
-      console.error(err);
-      setError(true);
+      const res = await fetch(
+        `http://localhost:5000/api/matches?league=${league.league_id}`
+      );
+      const data = await res.json();
+      setMatches(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error(error);
       setMatches([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadMatches();
-  }, [selectedDate]);
-
-  const groupedMatches = useMemo(() => {
-    const groups: Record<
-      string,
-      ApiEvent[]
-    > = {};
-
-    matches.forEach(match => {
-      const league =
-        getLeagueName(match);
-
-      if (!groups[league]) {
-        groups[league] = [];
-      }
-
-      groups[league].push(match);
-    });
-
-    return groups;
-  }, [matches]);
-
-  const changeDate = (days: number) => {
-    const newDate =
-      new Date(selectedDate);
-
-    newDate.setDate(
-      newDate.getDate() + days
-    );
-
-    setSelectedDate(newDate);
-  };
+  const formatDate = (date?: string) =>
+    date
+      ? new Date(date).toLocaleString("en-GB", {
+          day: "2-digit",
+          month: "short",
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "Date TBA";
 
   return (
     <main className="matches-page">
-
-      {/* ================= HERO ================= */}
-
       <section className="matches-hero">
+        <div className="hero-overlay" />
 
-        <div className="matches-hero-grid" />
-
-        <div className="matches-glow glow-one" />
-        <div className="matches-glow glow-two" />
-
-        <div className="matches-container matches-hero-content">
-
-          <div className="matches-hero-copy">
-
-            <div className="matches-eyebrow">
-              <i />
-              GOALZONE · MATCH CENTER
-            </div>
-
-            <h1>
-              EVERY MATCH.
-              <strong>
-                ONE PLACE.
-              </strong>
-            </h1>
-
-            <p>
-              Browse today's football
-              fixtures, upcoming games
-              and live results from the
-              world's biggest leagues.
-            </p>
-
-            <div className="matches-hero-stats">
-
-              <div>
-                <strong>
-                  {matches.length}
-                </strong>
-                <span>MATCHES</span>
-              </div>
-
-              <div>
-                <strong>
-                  {
-                    Object.keys(
-                      groupedMatches
-                    ).length
-                  }
-                </strong>
-                <span>LEAGUES</span>
-              </div>
-
-              <div>
-                <strong>LIVE</strong>
-                <span>UPDATES</span>
-              </div>
-
-            </div>
-
-          </div>
-
-          <div className="matches-hero-card">
-
-            <div className="hero-card-top">
-
-              <span>
-                MATCH CENTER
-              </span>
-
-              <b>
-                <i />
-                LIVE DATA
-              </b>
-
-            </div>
-
-            <div className="hero-card-date">
-              {formatDate(selectedDate)}
-            </div>
-
-            <div className="hero-card-line">
-              <span />
-              <i />
-              <span />
-            </div>
-
-            <div className="hero-card-bottom">
-
-              <span>GOALZONE</span>
-
-              <strong>
-                FIXTURES
-              </strong>
-
-            </div>
-
-          </div>
-
+        <div className="matches-hero-content">
+          <span className="hero-kicker">GOALZONE LIVE CENTER</span>
+          <h1>MATCHES</h1>
+          <p>Follow football matches from leagues around the world</p>
         </div>
       </section>
 
-      {/* ================= CALENDAR ================= */}
-
-      <section className="matches-container calendar-section">
-
-        <div className="calendar-top">
-
-          <span className="section-label">
-            MATCH CALENDAR
-          </span>
-
-          <h2>
-            Choose your{" "}
-            <strong>
-              matchday
-            </strong>
-          </h2>
-
-          <p>
-            Select a date to explore all
-            available fixtures.
-          </p>
-
-        </div>
-
-        {/* DATE NAVIGATION */}
-
-        <div className="date-strip-wrapper">
-
-          <button
-            type="button"
-            className="date-arrow"
-            onClick={() =>
-              changeDate(-1)
-            }
-            aria-label="Previous day"
-          >
-            ‹
-          </button>
-
-          <div className="date-strip">
-
-            {dates.map(date => {
-
-              const active =
-                dateKey(date) ===
-                dateKey(selectedDate);
-
-              return (
-                <button
-                  key={dateKey(date)}
-                  className={
-                    active
-                      ? "date-btn active"
-                      : "date-btn"
-                  }
-                  onClick={() =>
-                    setSelectedDate(
-                      new Date(date)
-                    )
-                  }
-                >
-
-                  <span>
-                    {date.toLocaleDateString(
-                      "en-US",
-                      {
-                        weekday: "short",
-                      }
-                    )}
-                  </span>
-
-                  <strong>
-                    {date.getDate()}
-                  </strong>
-
-                  <small>
-                    {date.toLocaleDateString(
-                      "en-US",
-                      {
-                        month: "short",
-                      }
-                    )}
-                  </small>
-
-                </button>
-              );
-            })}
-
+      {!selectedLeague && (
+        <section className="leagues-section">
+          <div className="section-heading">
+            <span>FOOTBALL</span>
+            <h2>Choose a League</h2>
+            <p>Select a competition to see all its matches</p>
           </div>
 
-          <button
-            type="button"
-            className="date-arrow"
-            onClick={() =>
-              changeDate(1)
-            }
-            aria-label="Next day"
-          >
-            ›
-          </button>
+          {loading ? (
+            <div className="matches-state">Loading leagues...</div>
+          ) : leagues.length === 0 ? (
+            <div className="matches-state">No leagues found</div>
+          ) : (
+            <div className="leagues-grid">
+              {leagues.map((league) => {
+                const logo = getLeagueLogo(league.league_id);
 
-        </div>
+                return (
+                  <button
+                    className="league-card"
+                    key={league.league_id}
+                    onClick={() => openLeague(league)}
+                  >
+                    <div className="league-icon">
+                      {logo ? (
+                        <img src={logo} alt={league.league_name} />
+                      ) : (
+                        <span>⚽</span>
+                      )}
+                    </div>
 
-      </section>
+                    <div className="league-info">
+                      <span>{league.country}</span>
+                      <h3>{league.league_name}</h3>
+                      <small>{league.matches_count} Matches</small>
+                    </div>
 
-      {/* ================= MATCHES ================= */}
+                    <div className="league-arrow">→</div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
-      <section className="matches-container matches-list-section">
-
-        <div className="matches-section-head">
-
-          <div>
-
-            <span className="section-label">
-              FOOTBALL FIXTURES
-            </span>
-
-            <h2>
-              Today's{" "}
-              <strong>
-                Matches
-              </strong>
-            </h2>
-
-          </div>
-
-          <div className="matches-total">
-
-            <strong>
-              {matches.length}
-            </strong>
-
-            <span>
-              MATCHES
-            </span>
-
-          </div>
-
-        </div>
-
-        {/* LOADING */}
-
-        {loading && (
-
-          <div className="matches-state">
-
-            <div className="matches-loader" />
-
-            <h3>
-              Loading matches...
-            </h3>
-
-            <p>
-              Fetching the latest football
-              fixtures.
-            </p>
-
-          </div>
-
-        )}
-
-        {/* ERROR */}
-
-        {!loading && error && (
-
-          <div className="matches-state">
-
-            <strong>
-              SOMETHING WENT WRONG
-            </strong>
-
-            <p>
-              We couldn't load the matches
-              right now.
-            </p>
-
+      {selectedLeague && (
+        <section className="league-matches">
+          <div className="selected-header">
             <button
-              onClick={loadMatches}
+              className="back-button"
+              onClick={() => {
+                setSelectedLeague(null);
+                setMatches([]);
+              }}
             >
-              TRY AGAIN
+              ← All Leagues
             </button>
 
+            <div>
+              <span>{selectedLeague.country}</span>
+              <h2>{selectedLeague.league_name}</h2>
+            </div>
+
+            <div className="match-count">
+              {matches.length} MATCHES
+            </div>
           </div>
 
-        )}
-
-        {/* NO MATCHES */}
-
-        {!loading &&
-          !error &&
-          !matches.length && (
-
+          {loading ? (
+            <div className="matches-state">Loading matches...</div>
+          ) : matches.length === 0 ? (
             <div className="matches-state">
-
-              <strong>
-                NO MATCHES FOUND
-              </strong>
-
-              <p>
-                There are no fixtures
-                available for this date.
-              </p>
-
+              <h3>No matches found</h3>
+              <p>This league has no matches available.</p>
             </div>
+          ) : (
+            <div className="matches-grid">
+              {matches.map((match) => (
+                <article className="match-card" key={match.id}>
+                  <div className="match-top">
+                    <div className="competition">
+                      {match.league_name}
+                    </div>
 
-          )}
+                    <span
+                      className={`match-status ${
+                        match.status?.toLowerCase() || ""
+                      }`}
+                    >
+                      {match.status || "Scheduled"}
+                    </span>
+                  </div>
 
-        {/* MATCHES */}
+                  <div className="match-date">
+                    {formatDate(match.match_date)}
+                  </div>
 
-        {!loading &&
-          !error &&
-          matches.length > 0 && (
-
-            <div className="league-groups">
-
-              {Object.entries(
-                groupedMatches
-              ).map(
-                ([leagueName, leagueMatches]) => (
-
-                  <section
-                    className="league-group"
-                    key={leagueName}
-                  >
-
-                    <div className="league-header">
-
-                      <div className="league-title">
-
-                        <div className="league-icon">
-                          ⚽
-                        </div>
-
-                        <div>
-
-                          <span>
-                            COMPETITION
-                          </span>
-
-                          <h3>
-                            {leagueName}
-                          </h3>
-
-                        </div>
-
+                  <div className="teams">
+                    <div className="team">
+                      <div className="team-logo">
+                        {match.home_logo ? (
+                          <img
+                            src={match.home_logo}
+                            alt={match.home_team}
+                          />
+                        ) : (
+                          "⚽"
+                        )}
                       </div>
-
-                      <span className="league-count">
-                        {leagueMatches.length} MATCHES
-                      </span>
-
+                      <strong>{match.home_team}</strong>
                     </div>
 
-                    <div className="matches-grid">
-
-                      {leagueMatches.map(
-                        match => {
-
-                          const home =
-                            getTeam(
-                              match,
-                              "home"
-                            );
-
-                          const away =
-                            getTeam(
-                              match,
-                              "away"
-                            );
-
-                          const isLive =
-                            match
-                              .competitions?.[0]
-                              ?.status?.type
-                              ?.state === "in";
-
-                          const status =
-                            getStatus(match);
-
-                          return (
-                            <article
-                              className={
-                                isLive
-                                  ? "match-card live"
-                                  : "match-card"
-                              }
-                              key={match.id}
-                            >
-
-                              <div className="match-card-top">
-
-                                <span>
-
-                                  {isLive ? (
-                                    <>
-                                      <i />
-                                      LIVE
-                                    </>
-                                  ) : (
-                                    status
-                                  )}
-
-                                </span>
-
-                                <small>
-                                  {getTime(match)}
-                                </small>
-
-                              </div>
-
-                              <div className="match-teams">
-
-                                {/* HOME */}
-
-                                <div className="match-team">
-
-                                  {home?.team?.logo ? (
-
-                                    <img
-                                      src={
-                                        home.team.logo
-                                      }
-                                      alt={
-                                        home.team
-                                          .displayName ||
-                                        "Home"
-                                      }
-                                    />
-
-                                  ) : (
-
-                                    <div className="team-fallback">
-                                      H
-                                    </div>
-
-                                  )}
-
-                                  <strong>
-                                    {home?.team
-                                      ?.displayName ||
-                                      "Home"}
-                                  </strong>
-
-                                  <b>
-                                    {home?.score ??
-                                      "-"}
-                                  </b>
-
-                                </div>
-
-                                {/* VS */}
-
-                                <div className="match-vs">
-
-                                  <span>
-                                    {isLive
-                                      ? "LIVE"
-                                      : "VS"}
-                                  </span>
-
-                                  <small>
-                                    {isLive
-                                      ? "NOW"
-                                      : "MATCH"}
-                                  </small>
-
-                                </div>
-
-                                {/* AWAY */}
-
-                                <div className="match-team">
-
-                                  {away?.team?.logo ? (
-
-                                    <img
-                                      src={
-                                        away.team.logo
-                                      }
-                                      alt={
-                                        away.team
-                                          .displayName ||
-                                        "Away"
-                                      }
-                                    />
-
-                                  ) : (
-
-                                    <div className="team-fallback">
-                                      A
-                                    </div>
-
-                                  )}
-
-                                  <strong>
-                                    {away?.team
-                                      ?.displayName ||
-                                      "Away"}
-                                  </strong>
-
-                                  <b>
-                                    {away?.score ??
-                                      "-"}
-                                  </b>
-
-                                </div>
-
-                              </div>
-
-                              <div className="match-card-footer">
-
-                                <span>
-                                  {isLive
-                                    ? "LIVE SCORE"
-                                    : "MATCH CENTER"}
-                                </span>
-
-                                <button
-                                  type="button"
-                                >
-                                  VIEW MATCH →
-                                </button>
-
-                              </div>
-
-                            </article>
-                          );
-                        }
-                      )}
-
+                    <div className="score">
+                      <b>{match.score_home ?? 0}</b>
+                      <span>:</span>
+                      <b>{match.score_away ?? 0}</b>
                     </div>
 
-                  </section>
-                )
-              )}
-
+                    <div className="team">
+                      <div className="team-logo">
+                        {match.away_logo ? (
+                          <img
+                            src={match.away_logo}
+                            alt={match.away_team}
+                          />
+                        ) : (
+                          "⚽"
+                        )}
+                      </div>
+                      <strong>{match.away_team}</strong>
+                    </div>
+                  </div>
+                </article>
+              ))}
             </div>
-
           )}
-
-      </section>
-
+        </section>
+      )}
     </main>
   );
 }

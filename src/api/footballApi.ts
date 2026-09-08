@@ -1,7 +1,47 @@
-const BASE_URL =
-  "https://site.api.espn.com/apis/site/v2/sports/soccer";
+export type Team = {
+  id?: string | number;
+  name?: string;
+  displayName?: string;
+  shortDisplayName?: string;
+  logo?: string;
+};
 
-/* ================= LEAGUES ================= */
+export type Competitor = {
+  homeAway?: "home" | "away";
+  team?: Team;
+  score?: string;
+};
+
+export type ApiEvent = {
+  id: string | number;
+  name?: string;
+  date?: string;
+  status?: string;
+
+  league?: {
+    id?: string;
+    name?: string;
+  };
+
+  competitions?: {
+    competitors?: Competitor[];
+  }[];
+
+  home_team?: string;
+  away_team?: string;
+  home_logo?: string;
+  away_logo?: string;
+  match_date?: string;
+  score_home?: number;
+  score_away?: number;
+};
+
+export type League = {
+  id: string;
+  name: string;
+  country?: string;
+  logo?: string;
+};
 
 export const LEAGUES = {
   premierLeague: "eng.1",
@@ -10,485 +50,113 @@ export const LEAGUES = {
   serieA: "ita.1",
   ligue1: "fra.1",
   championsLeague: "uefa.champions",
-} as const;
-
-/* ================= TYPES ================= */
-
-type Team = {
-  id?: string;
-  uid?: string;
-  displayName?: string;
-  shortDisplayName?: string;
-  abbreviation?: string;
-  logo?: string;
 };
 
-type Competitor = {
-  homeAway?: "home" | "away";
-  score?: string | number;
-  team?: Team;
-};
+const ESPN_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/soccer";
 
-export type ApiEvent = {
-  id: string;
-  date: string;
-  name?: string;
-  shortName?: string;
-
-  league?: {
-    id?: string;
-    name?: string;
-  };
-
-  competitions?: Array<{
-    competitors?: Competitor[];
-
-    status?: {
-      type?: {
-        state?: string;
-        detail?: string;
-        shortDetail?: string;
-        description?: string;
-      };
-    };
-  }>;
-};
-
-export type NewsArticle = {
-  id?: string;
-  headline: string;
-  description?: string;
-  published?: string;
-
-  links?: {
-    web?: {
-      href?: string;
-    };
-  };
-
-  images?: Array<{
-    url?: string;
-  }>;
-};
-
-export type MatchDetails = {
-  id: string;
-  name?: string;
-  date?: string;
-  competitions?: ApiEvent["competitions"];
-  league?: ApiEvent["league"];
-  news?: NewsArticle[];
-  boxscore?: unknown;
-};
-
-/* ================= REQUEST ================= */
-
-async function getJSON<T = any>(
-  url: string
-): Promise<T> {
-  const response = await fetch(url);
-
-  if (!response.ok) {
-    throw new Error(
-      `Request failed: ${response.status}`
-    );
-  }
-
-  return response.json();
-}
+const BASE_URL = "http://localhost:5000/api";
 
 /* ================= MATCHES ================= */
 
-const matchCache =
-  new Map<string, ApiEvent[]>();
-
-const matchPromises =
-  new Map<string, Promise<ApiEvent[]>>();
-
-function getMatchCacheKey(
-  league: string,
-  date?: Date
-) {
-  if (!date) return league;
-
-  const year = date.getFullYear();
-
-  const month = String(
-    date.getMonth() + 1
-  ).padStart(2, "0");
-
-  const day = String(
-    date.getDate()
-  ).padStart(2, "0");
-
-  return `${league}-${year}${month}${day}`;
-}
-
 export async function getMatches(
-  league: string,
-  date?: Date
+  league: string = LEAGUES.premierLeague
 ): Promise<ApiEvent[]> {
-  const key =
-    getMatchCacheKey(league, date);
-
-  if (matchCache.has(key)) {
-    return matchCache.get(key)!;
-  }
-
-  if (matchPromises.has(key)) {
-    return matchPromises.get(key)!;
-  }
-
-  const promise = (async () => {
-    try {
-      let url =
-        `${BASE_URL}/${league}/scoreboard`;
-
-      if (date) {
-        const year =
-          date.getFullYear();
-
-        const month = String(
-          date.getMonth() + 1
-        ).padStart(2, "0");
-
-        const day = String(
-          date.getDate()
-        ).padStart(2, "0");
-
-        url +=
-          `?dates=${year}${month}${day}`;
-      }
-
-      const data =
-        await getJSON(url);
-
-      const events =
-        data?.events || [];
-
-      matchCache.set(
-        key,
-        events
-      );
-
-      return events;
-    } catch (error) {
-      console.error(
-        "Matches API error:",
-        error
-      );
-
-      return [];
-    } finally {
-      matchPromises.delete(key);
-    }
-  })();
-
-  matchPromises.set(
-    key,
-    promise
+  const res = await fetch(
+    `${ESPN_URL}/${league}/scoreboard`
   );
 
-  return promise;
+  if (!res.ok) {
+    throw new Error("Failed to fetch real matches");
+  }
+
+  const data = await res.json();
+
+  return data.events || [];
 }
 
 /* ================= FEATURED ================= */
 
-let featuredCache:
-  | ApiEvent[]
-  | null = null;
+export async function getFeaturedMatches(): Promise<ApiEvent[]> {
+  const leagues = [
+    LEAGUES.premierLeague,
+    LEAGUES.laLiga,
+    LEAGUES.bundesliga,
+    LEAGUES.serieA,
+    LEAGUES.ligue1,
+  ];
 
-let featuredPromise:
-  | Promise<ApiEvent[]>
-  | null = null;
+  const results = await Promise.all(
+    leagues.map((league) => getMatches(league))
+  );
 
-export async function getFeaturedMatches() {
-  if (featuredCache !== null) {
-    return featuredCache;
-  }
-
-  if (featuredPromise) {
-    return featuredPromise;
-  }
-
-  featuredPromise = getMatches(
-    LEAGUES.premierLeague
-  ).then(matches => {
-    featuredCache =
-      matches.slice(0, 20);
-
-    return featuredCache;
-  });
-
-  try {
-    return await featuredPromise;
-  } finally {
-    featuredPromise = null;
-  }
+  return results
+    .flat()
+    .sort(
+      (a, b) =>
+        new Date(a.date || "").getTime() -
+        new Date(b.date || "").getTime()
+    )
+    .slice(0, 6);
 }
 
-/* ================= LIVE ================= */
+/* ================= LEAGUES ================= */
 
-let liveCache:
-  | ApiEvent[]
-  | null = null;
-
-let livePromise:
-  | Promise<ApiEvent[]>
-  | null = null;
-
-export async function getLiveMatches() {
-  if (liveCache !== null) {
-    return liveCache;
-  }
-
-  if (livePromise) {
-    return livePromise;
-  }
-
-  livePromise = getMatches(
-    LEAGUES.premierLeague
-  ).then(matches => {
-    liveCache = matches.filter(
-      match =>
-        match.competitions?.[0]
-          ?.status?.type?.state ===
-        "in"
-    );
-
-    return liveCache;
-  });
-
-  try {
-    return await livePromise;
-  } finally {
-    livePromise = null;
-  }
-}
-
-/* ================= MATCH STATUS ================= */
-
-export function getMatchStatus(
-  match: ApiEvent
-) {
-  const status =
-    match.competitions?.[0]
-      ?.status?.type;
-
-  if (!status) {
-    return {
-      state: "unknown",
-      text: "UNKNOWN",
-    };
-  }
-
-  if (status.state === "in") {
-    return {
-      state: "live",
-      text:
-        status.shortDetail ||
-        status.detail ||
-        "LIVE",
-    };
-  }
-
-  if (status.state === "post") {
-    return {
-      state: "finished",
-      text:
-        status.shortDetail ||
-        status.detail ||
-        "FT",
-    };
-  }
-
-  return {
-    state: "upcoming",
-    text:
-      status.shortDetail ||
-      status.detail ||
-      status.description ||
-      "UPCOMING",
-  };
-}
-
-/* ================= TEAMS ================= */
-
-export function getMatchTeams(
-  match: ApiEvent
-) {
-  const competitors =
-    match.competitions?.[0]
-      ?.competitors || [];
-
-  return {
-    home: competitors.find(
-      team =>
-        team.homeAway === "home"
-    ),
-
-    away: competitors.find(
-      team =>
-        team.homeAway === "away"
-    ),
-  };
+export async function getLeagues(): Promise<League[]> {
+  return [
+    {
+      id: "eng.1",
+      name: "Premier League",
+      country: "England",
+    },
+    {
+      id: "esp.1",
+      name: "La Liga",
+      country: "Spain",
+    },
+    {
+      id: "ger.1",
+      name: "Bundesliga",
+      country: "Germany",
+    },
+    {
+      id: "ita.1",
+      name: "Serie A",
+      country: "Italy",
+    },
+    {
+      id: "fra.1",
+      name: "Ligue 1",
+      country: "France",
+    },
+    {
+      id: "uefa.champions",
+      name: "Champions League",
+      country: "Europe",
+    },
+  ];
 }
 
 /* ================= NEWS ================= */
-/*
-   NEWS = REQUEST واحد فقط
-*/
 
-let newsCache:
-  | NewsArticle[]
-  | null = null;
+export async function getNews() {
+  const res = await fetch(`${BASE_URL}/news`);
 
-let newsPromise:
-  | Promise<NewsArticle[]>
-  | null = null;
-
-export async function getLatestNews() {
-  if (newsCache !== null) {
-    return newsCache;
+  if (!res.ok) {
+    throw new Error("Failed to fetch news");
   }
 
-  if (newsPromise) {
-    return newsPromise;
-  }
-
-  newsPromise = (async () => {
-    try {
-      const data =
-        await getJSON(
-          `${BASE_URL}/${LEAGUES.premierLeague}/news`
-        );
-
-      const articles: NewsArticle[] =
-        data?.articles ||
-        data?.news ||
-        [];
-
-      const unique =
-        [
-          ...new Map(
-            articles
-              .filter(
-                article =>
-                  article?.headline
-              )
-              .map(
-                (article, index) => [
-                  article.id ||
-                    `${article.headline}-${index}`,
-                  article,
-                ]
-              )
-          ).values(),
-        ];
-
-      newsCache =
-        unique.slice(0, 30);
-
-      return newsCache;
-    } catch (error) {
-      console.error(
-        "News API error:",
-        error
-      );
-
-      newsCache = [];
-
-      return [];
-    } finally {
-      newsPromise = null;
-    }
-  })();
-
-  return newsPromise;
-}
-
-/*
-   الكود القديم يقدر يستخدم
-   getNews(league)
-   وبرضه هيعمل Request واحد فقط.
-*/
-
-export async function getNews(
-  _league?: string
-) {
-  return getLatestNews();
-}
-
-/* ================= MATCH DETAILS ================= */
-
-const detailsCache =
-  new Map<
-    string,
-    MatchDetails | null
-  >();
-
-const detailsPromises =
-  new Map<
-    string,
-    Promise<MatchDetails | null>
-  >();
-
-export async function getMatchDetails(
-  league: string,
-  eventId: string
-) {
-  if (detailsCache.has(eventId)) {
-    return detailsCache.get(eventId)!;
-  }
-
-  if (detailsPromises.has(eventId)) {
-    return detailsPromises.get(eventId)!;
-  }
-
-  const promise =
-    (async () => {
-      try {
-        const data =
-          await getJSON<MatchDetails>(
-            `${BASE_URL}/${league}/summary?event=${eventId}`
-          );
-
-        detailsCache.set(
-          eventId,
-          data
-        );
-
-        return data;
-      } catch (error) {
-        console.error(
-          "Match details error:",
-          error
-        );
-
-        detailsCache.set(
-          eventId,
-          null
-        );
-
-        return null;
-      } finally {
-        detailsPromises.delete(
-          eventId
-        );
-      }
-    })();
-
-  detailsPromises.set(
-    eventId,
-    promise
-  );
-
-  return promise;
+  return res.json();
 }
 
 /* ================= TRANSFERS ================= */
 
-export {
-  getTransfers,
-  getAllTransfers,
-} from "./transferApi";
+export async function getTransfers() {
+  const res = await fetch(`${BASE_URL}/transfers`);
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch transfers");
+  }
+
+  return res.json();
+}

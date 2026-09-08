@@ -1,10 +1,4 @@
-
-import {
-  BrowserRouter,
-  Routes,
-  Route,
-  useNavigate,
-} from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
 
@@ -13,79 +7,65 @@ import Matches from "./pages/Matches";
 import Live from "./pages/Live";
 import Transfers from "./pages/Transfers";
 import News from "./pages/News";
+import Leagues from "./pages/Leagues";
 import Favorites from "./pages/Favorites";
-import MatchDetails from "./pages/MatchDetails";
-import TeamDetails from "./pages/TeamDetails";
 
-import "./App.css";
-
-function AppRoutes() {
-  const navigate = useNavigate();
-
+function App() {
   return (
-    <div className="app">
+    <BrowserRouter>
       <Navbar />
 
       <Routes>
         {/* Home */}
-        <Route path="/" element={<Home />} />
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
         {/* Matches */}
         <Route
           path="/matches"
-          element={
-            <Matches
-              onDetails={(match) =>
-                navigate(`/match/${match.id}`, {
-                  state: {
-                    match,
-                    from: "matches",
-                  },
-                })
-              }
-            />
-          }
+          element={<Matches />}
         />
 
         {/* Live */}
         <Route
           path="/live"
-          element={
-            <Live
-              onDetails={(match) =>
-                navigate(`/match/${match.id}`, {
-                  state: {
-                    match,
-                    from: "live",
-                  },
-                })
-              }
-            />
-          }
+          element={<Live />}
         />
 
-        {/* Other Pages */}
-        <Route path="/transfers" element={<Transfers />} />
-        <Route path="/news" element={<News />} />
+        {/* Transfers */}
+        <Route
+          path="/transfers"
+          element={<Transfers />}
+        />
+
+        {/* News */}
+        <Route
+          path="/news"
+          element={<News />}
+        />
+
+        {/* Leagues */}
+        <Route
+          path="/leagues"
+          element={<Leagues />}
+        />
 
         {/* Favorites */}
-        <Route path="/favorites" element={<Favorites />} />
+        <Route
+          path="/favorites"
+          element={<Favorites />}
+        />
 
-        {/* Team Details */}
-        <Route path="/team/:id" element={<TeamDetails />} />
-
-        {/* Match Details */}
-        <Route path="/match/:id" element={<MatchDetails />} />
+        {/* Not Found */}
+        <Route
+          path="*"
+          element={<Home />}
+        />
       </Routes>
-    </div>
-  );
-}
-
-export default function App() {
-  return (
-    <BrowserRouter>
-      <AppRoutes />
     </BrowserRouter>
   );
 }
 
+export default App;
