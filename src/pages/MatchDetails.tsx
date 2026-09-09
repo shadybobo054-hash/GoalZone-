@@ -2,8 +2,8 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   getMatchDetails,
-  LEAGUES,
   type MatchDetails as MatchDetailsType,
+  type Competitor,
 } from "../api/footballApi";
 import "./MatchDetails.css";
 
@@ -68,11 +68,11 @@ export default function MatchDetails() {
     competition?.competitors || [];
 
   const home = competitors.find(
-    team => team.homeAway === "home"
+    (team: Competitor) => team.homeAway === "home"
   );
 
   const away = competitors.find(
-    team => team.homeAway === "away"
+    (team: Competitor) => team.homeAway === "away"
   );
 
   const status =

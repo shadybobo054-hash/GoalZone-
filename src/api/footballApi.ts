@@ -12,6 +12,14 @@ export type Competitor = {
   score?: string;
 };
 
+export type CompetitionStatus = {
+  type?: {
+    state?: string;
+    detail?: string;
+    description?: string;
+  };
+};
+
 export type ApiEvent = {
   id: string | number;
   name?: string;
@@ -25,6 +33,7 @@ export type ApiEvent = {
 
   competitions?: {
     competitors?: Competitor[];
+    status?: CompetitionStatus;
   }[];
 
   home_team?: string;
@@ -35,6 +44,8 @@ export type ApiEvent = {
   score_home?: number;
   score_away?: number;
 };
+
+export type MatchDetails = ApiEvent;
 
 export type League = {
   id: string;
@@ -73,6 +84,24 @@ export async function getMatches(
   const data = await res.json();
 
   return data.events || [];
+}
+
+/* ================= MATCH DETAILS ================= */
+
+export async function getMatchDetails(
+  league: string,
+  eventId: string
+): Promise<MatchDetails | null> {
+  try {
+    const events = await getMatches(league);
+    return (
+      events.find(
+        (e) => String(e.id) === String(eventId)
+      ) ?? null
+    );
+  } catch {
+    return null;
+  }
 }
 
 /* ================= FEATURED ================= */
