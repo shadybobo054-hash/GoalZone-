@@ -18,25 +18,34 @@ type Match = {
   league_logo: string | null;
 };
 
+type ApiResponse = {
+  success?: boolean;
+  matches?: Match[];
+};
+
 export default function Matches() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedDate, setSelectedDate] = useState(
-    new Date()
-  );
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/matches")
-      .then((res) => res.json())
-      .then((data) => {
-        if (!Array.isArray(data)) {
-          setMatches([]);
-          return;
+    fetch("http://127.0.0.1:5000/api/matches")
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Server Error ${res.status}`);
         }
+        return res.json();
+      })
+      .then((data: Match[] | ApiResponse) => {
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data.matches)
+            ? data.matches
+            : [];
 
         const unique = Array.from(
           new Map(
-            data.map((match: Match) => [
+            list.map((match) => [
               match.source_id ||
                 `${match.home_team}-${match.away_team}-${match.match_date}`,
               match,
@@ -45,6 +54,30 @@ export default function Matches() {
         );
 
         setMatches(unique);
+
+        // لو النهارده مفيهوش ماتشات، اختار أقرب يوم فيه ماتش
+        if (unique.length > 0) {
+          const todayKey = dateKey(new Date());
+
+          const hasToday = unique.some(
+            (match) => matchDateKey(match.match_date) === todayKey
+          );
+
+          if (!hasToday) {
+            const sortedDates = unique
+              .map((match) => new Date(match.match_date))
+              .filter((date) => !Number.isNaN(date.getTime()))
+              .sort(
+                (a, b) =>
+                  Math.abs(a.getTime() - Date.now()) -
+                  Math.abs(b.getTime() - Date.now())
+              );
+
+            if (sortedDates[0]) {
+              setSelectedDate(sortedDates[0]);
+            }
+          }
+        }
       })
       .catch((err) => {
         console.error("Matches error:", err);
@@ -52,14 +85,6 @@ export default function Matches() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  const days = useMemo(() => {
-    return Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(selectedDate);
-      date.setDate(selectedDate.getDate() - 3 + i);
-      return date;
-    });
-  }, [selectedDate]);
 
   function dateKey(date: Date) {
     return `${date.getFullYear()}-${String(
@@ -79,16 +104,21 @@ export default function Matches() {
 
   const selectedKey = dateKey(selectedDate);
 
+  const days = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(selectedDate);
+      date.setDate(selectedDate.getDate() - 3 + i);
+      return date;
+    });
+  }, [selectedDate]);
+
   const dayMatches = matches.filter(
-    (match) =>
-      matchDateKey(match.match_date) === selectedKey
+    (match) => matchDateKey(match.match_date) === selectedKey
   );
 
   const leagues = Array.from(
     new Set(
-      dayMatches.map(
-        (match) => match.league_id || "other"
-      )
+      dayMatches.map((match) => match.league_id || "other")
     )
   );
 
@@ -146,8 +176,6 @@ export default function Matches() {
   return (
     <main className="matches-page">
 
-      {/* HERO */}
-
       <section className="matches-hero">
         <div className="matches-hero-content">
           <span>GOALZONE • MATCH CENTER</span>
@@ -161,8 +189,6 @@ export default function Matches() {
           </p>
         </div>
       </section>
-
-      {/* CONTENT */}
 
       <section className="matches-section">
 
@@ -181,8 +207,6 @@ export default function Matches() {
           </strong>
         </div>
 
-        {/* CALENDAR */}
-
         <div className="calendar">
 
           <button
@@ -194,7 +218,6 @@ export default function Matches() {
           </button>
 
           <div className="days">
-
             {days.map((date) => {
               const active =
                 dateKey(date) === selectedKey;
@@ -235,7 +258,6 @@ export default function Matches() {
                 </button>
               );
             })}
-
           </div>
 
           <button
@@ -252,10 +274,7 @@ export default function Matches() {
           >
             TODAY
           </button>
-
         </div>
-
-        {/* LOADING */}
 
         {loading && (
           <div className="matches-state">
@@ -263,8 +282,6 @@ export default function Matches() {
             <h3>Loading matches...</h3>
           </div>
         )}
-
-        {/* EMPTY */}
 
         {!loading && dayMatches.length === 0 && (
           <div className="matches-state">
@@ -280,13 +297,10 @@ export default function Matches() {
           </div>
         )}
 
-        {/* MATCHES */}
-
         {!loading && dayMatches.length > 0 && (
           <div className="league-groups">
 
             {leagues.map((leagueId) => {
-
               const leagueMatches =
                 dayMatches.filter(
                   (match) =>
@@ -302,12 +316,9 @@ export default function Matches() {
                   key={leagueId}
                 >
 
-                  {/* LEAGUE */}
-
                   <div className="league-header">
 
                     <div className="league-logo">
-
                       {league.league_logo ? (
                         <img
                           src={league.league_logo}
@@ -319,11 +330,9 @@ export default function Matches() {
                       ) : (
                         <span>🏆</span>
                       )}
-
                     </div>
 
                     <div className="league-info">
-
                       <small>
                         COMPETITION
                       </small>
@@ -337,7 +346,6 @@ export default function Matches() {
                         {league.country ||
                           "International"}
                       </span>
-
                     </div>
 
                     <strong>
@@ -349,12 +357,9 @@ export default function Matches() {
 
                   </div>
 
-                  {/* CARDS */}
-
                   <div className="matches-grid">
 
                     {leagueMatches.map((match) => {
-
                       const live = isLive(
                         match.status
                       );
@@ -378,7 +383,6 @@ export default function Matches() {
                         >
 
                           <div className="match-top">
-
                             <span>
                               {getTime(
                                 match.match_date
@@ -396,17 +400,12 @@ export default function Matches() {
                                 ? "● LIVE"
                                 : match.status}
                             </b>
-
                           </div>
 
                           <div className="match-teams">
 
-                            {/* HOME */}
-
                             <div className="team">
-
                               <div className="team-logo">
-
                                 {match.home_logo ? (
                                   <img
                                     src={
@@ -419,7 +418,6 @@ export default function Matches() {
                                 ) : (
                                   <span>⚽</span>
                                 )}
-
                               </div>
 
                               <strong>
@@ -429,13 +427,9 @@ export default function Matches() {
                               <small>
                                 HOME
                               </small>
-
                             </div>
 
-                            {/* CENTER */}
-
                             <div className="match-center">
-
                               {scheduled ? (
                                 <>
                                   <strong className="time">
@@ -450,32 +444,21 @@ export default function Matches() {
                                 </>
                               ) : (
                                 <div className="score">
-
                                   <b>
-                                    {
-                                      match.score_home
-                                    }
+                                    {match.score_home}
                                   </b>
 
                                   <span>:</span>
 
                                   <b>
-                                    {
-                                      match.score_away
-                                    }
+                                    {match.score_away}
                                   </b>
-
                                 </div>
                               )}
-
                             </div>
 
-                            {/* AWAY */}
-
                             <div className="team">
-
                               <div className="team-logo">
-
                                 {match.away_logo ? (
                                   <img
                                     src={
@@ -488,7 +471,6 @@ export default function Matches() {
                                 ) : (
                                   <span>⚽</span>
                                 )}
-
                               </div>
 
                               <strong>
@@ -498,13 +480,11 @@ export default function Matches() {
                               <small>
                                 AWAY
                               </small>
-
                             </div>
 
                           </div>
 
                           <div className="match-bottom">
-
                             <span>
                               {match.league_name ||
                                 "Football"}
@@ -513,7 +493,6 @@ export default function Matches() {
                             <span>
                               #{match.id}
                             </span>
-
                           </div>
 
                         </article>
@@ -521,7 +500,6 @@ export default function Matches() {
                     })}
 
                   </div>
-
                 </section>
               );
             })}

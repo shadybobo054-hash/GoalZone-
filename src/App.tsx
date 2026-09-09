@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Navbar from "./components/Navbar";
+import GoalZoneAI from "./components/GoalZoneAI";
 
 import Home from "./pages/Home";
 import Matches from "./pages/Matches";
@@ -13,57 +14,52 @@ import Favorites from "./pages/Favorites";
 function App() {
   return (
     <BrowserRouter>
+      {/* NAVBAR */}
       <Navbar />
 
+      {/* PAGES */}
       <Routes>
-        {/* Home */}
-        <Route
-          path="/"
-          element={<Home />}
-        />
+        <Route path="/" element={<Home />} />
 
-        {/* Matches */}
         <Route
           path="/matches"
           element={<Matches />}
         />
 
-        {/* Live */}
         <Route
           path="/live"
           element={<Live />}
         />
 
-        {/* Transfers */}
         <Route
           path="/transfers"
           element={<Transfers />}
         />
 
-        {/* News */}
         <Route
           path="/news"
           element={<News />}
         />
 
-        {/* Leagues */}
         <Route
           path="/leagues"
           element={<Leagues />}
         />
 
-        {/* Favorites */}
         <Route
           path="/favorites"
           element={<Favorites />}
         />
 
-        {/* Not Found */}
+        {/* FALLBACK */}
         <Route
           path="*"
           element={<Home />}
         />
       </Routes>
+
+      {/* GOALZONE AI */}
+      <GoalZoneAI />
     </BrowserRouter>
   );
 }

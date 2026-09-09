@@ -1,516 +1,189 @@
-
 import { useEffect, useState } from "react";
-import {
-  getMatches,
-  LEAGUES,
-  type ApiEvent,
-} from "../api/footballApi";
 import "./Live.css";
 
-const leagues = Object.values(LEAGUES);
-
-type TeamCompetitor = {
-  homeAway?: "home" | "away";
-  score?: string | number;
-  team?: {
-    displayName?: string;
-    logo?: string;
-  };
-};
-
-const getTeam = (
-  match: ApiEvent,
-  side: "home" | "away"
-): TeamCompetitor | undefined => {
-  const competitors =
-    (match.competitions?.[0]?.competitors ||
-      []) as TeamCompetitor[];
-
-  return competitors.find(
-    (team: TeamCompetitor) =>
-      team.homeAway === side
-  );
-};
-
-const isLive = (match: ApiEvent) =>
-  match.competitions?.[0]?.status?.type?.state === "in";
-
-const getMatchTime = (match: ApiEvent) => {
-  const type =
-    match.competitions?.[0]?.status?.type;
-
-  return (
-    type?.shortDetail ||
-    type?.detail ||
-    "LIVE"
-  );
+type Match = {
+  id: number;
+  home_team: string;
+  away_team: string;
+  home_logo: string | null;
+  away_logo: string | null;
+  match_date: string;
+  status: string;
+  score_home: number;
+  score_away: number;
+  league_name: string | null;
+  league_logo: string | null;
 };
 
 export default function Live() {
-  const [matches, setMatches] =
-    useState<ApiEvent[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [loading, setLoading] =
-    useState(true);
+  const loadMatches = () => {
+    fetch("http://localhost:5000/api/matches")
+      .then((r) => r.json())
+      .then((data) => {
+        const live = Array.isArray(data)
+          ? data.filter((m: Match) => {
+              const s = m.status.toUpperCase();
+              return (
+                s.includes("LIVE") ||
+                s.includes("IN PROGRESS") ||
+                s.includes("HALFTIME") ||
+                s.includes("1H") ||
+                s.includes("2H")
+              );
+            })
+          : [];
+
+        setMatches(live);
+      })
+      .catch(() => setMatches([]))
+      .finally(() => setLoading(false));
+  };
 
   useEffect(() => {
-    const loadLiveMatches = async () => {
-      setLoading(true);
-
-      try {
-        const results = await Promise.all(
-          leagues.map((league) =>
-            getMatches(league).catch(() => [])
-          )
-        );
-
-        const liveMatches = results
-          .flat()
-          .filter((match: ApiEvent) =>
-            isLive(match)
-          );
-
-        const unique = [
-          ...new Map(
-            liveMatches.map(
-              (match: ApiEvent) => [
-                match.id,
-                match,
-              ]
-            )
-          ).values(),
-        ];
-
-        setMatches(unique);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadLiveMatches();
+    loadMatches();
+    const timer = setInterval(loadMatches, 30000);
+    return () => clearInterval(timer);
   }, []);
 
-  const featured = matches[0];
-
-  const home = featured
-    ? getTeam(featured, "home")
-    : undefined;
-
-  const away = featured
-    ? getTeam(featured, "away")
-    : undefined;
+  const getMinute = (status: string) => {
+    const found = status.match(/\d+/);
+    return found ? `${found[0]}'` : "LIVE";
+  };
 
   return (
     <main className="live-page">
-
-      {/* HERO */}
       <section className="live-hero">
+        <div className="live-hero-overlay" />
 
-        <div className="hero-grid" />
-
-        <div className="hero-glow glow-one" />
-        <div className="hero-glow glow-two" />
-
-        <div className="live-container live-hero-inner">
-
-          <div className="live-copy">
-
-            <div className="live-eyebrow">
-              <i />
-              GOALZONE · LIVE CENTER
-            </div>
-
-            <h1>
-              THE ACTION
-              <strong>IS LIVE.</strong>
-            </h1>
-
-            <p>
-              Follow live football scores, match events
-              and every important moment as it happens.
-            </p>
-
-            <div className="hero-meta">
-
-              <span>
-                <i />
-                ON AIR
-              </span>
-
-              <b>LIVE SCORES</b>
-              <b>MATCH EVENTS</b>
-
-            </div>
-
+        <div className="live-hero-content">
+          <div className="live-kicker">
+            <span />
+            GOALZONE • LIVE CENTER
           </div>
 
-          {/* LIVE BOARD */}
-          <div className="live-board">
+          <h1>
+            THE GAME
+            <br />
+            <b>IS ON.</b>
+          </h1>
 
-            <div className="board-top">
+          <p>
+            Follow every live match, score and moment in real time.
+          </p>
 
-              <span>
-                LIVE BROADCAST
-              </span>
-
-              <b>
-                <i />
-                ON AIR
-              </b>
-
+          <div className="live-stats">
+            <div>
+              <strong>{matches.length}</strong>
+              <span>LIVE MATCHES</span>
             </div>
 
-            <div className="board-league">
-
-              <span>
-                {featured?.league?.name ||
-                  "GOALZONE LIVE"}
-              </span>
-
-              <strong>
-                {featured
-                  ? getMatchTime(featured)
-                  : "LIVE"}
-              </strong>
-
+            <div>
+              <strong>30s</strong>
+              <span>AUTO REFRESH</span>
             </div>
 
-            <div className="board-score">
-
-              {/* HOME */}
-              <div className="board-team">
-
-                {home?.team?.logo ? (
-                  <img
-                    src={home.team.logo}
-                    alt={
-                      home.team.displayName ||
-                      "Home"
-                    }
-                  />
-                ) : (
-                  <div className="fallback">
-                    H
-                  </div>
-                )}
-
-                <span>
-                  {home?.team?.displayName ||
-                    "HOME"}
-                </span>
-
-                <strong>
-                  {home?.score ?? "0"}
-                </strong>
-
-              </div>
-
-              {/* VS */}
-              <div className="board-vs">
-
-                <span>
-                  LIVE
-                </span>
-
-                <strong>
-                  VS
-                </strong>
-
-              </div>
-
-              {/* AWAY */}
-              <div className="board-team">
-
-                {away?.team?.logo ? (
-                  <img
-                    src={away.team.logo}
-                    alt={
-                      away.team.displayName ||
-                      "Away"
-                    }
-                  />
-                ) : (
-                  <div className="fallback">
-                    A
-                  </div>
-                )}
-
-                <span>
-                  {away?.team?.displayName ||
-                    "AWAY"}
-                </span>
-
-                <strong>
-                  {away?.score ?? "0"}
-                </strong>
-
-              </div>
-
+            <div>
+              <strong>24/7</strong>
+              <span>FOOTBALL</span>
             </div>
-
-            {/* LIVE WAVE */}
-            <div className="wave">
-
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(
-                (item) => (
-                  <i key={item} />
-                )
-              )}
-
-            </div>
-
-            {/* STATS */}
-            <div className="board-stats">
-
-              <div>
-                <strong>
-                  {matches.length}
-                </strong>
-
-                <span>
-                  LIVE MATCHES
-                </span>
-              </div>
-
-              <div>
-                <strong>
-                  24/7
-                </strong>
-
-                <span>
-                  COVERAGE
-                </span>
-              </div>
-
-              <div>
-                <strong>
-                  REAL
-                </strong>
-
-                <span>
-                  TIME
-                </span>
-              </div>
-
-            </div>
-
           </div>
-
         </div>
 
+        <div className="live-orb">
+          <span>LIVE</span>
+          <strong>●</strong>
+          <small>NOW</small>
+        </div>
       </section>
 
-      {/* LIVE MATCHES */}
-      <section className="live-section live-container">
-
-        <div className="section-head">
-
+      <section className="live-section">
+        <div className="live-heading">
           <div>
-
-            <span>
-              LIVE FOOTBALL
-            </span>
-
+            <span>REAL TIME SCORES</span>
             <h2>
-              Matches{" "}
-              <strong>
-                Live Now
-              </strong>
+              Live <b>Now</b>
             </h2>
-
-            <p>
-              Follow every match as it happens.
-            </p>
-
           </div>
 
-          <div className="live-count">
-
+          <div className="live-indicator">
             <i />
-
-            <strong>
-              {matches.length}
-            </strong>
-
-            <small>
-              LIVE
-            </small>
-
+            {matches.length} LIVE
           </div>
-
         </div>
 
-        {/* LOADING */}
         {loading ? (
-
-          <div className="live-state">
-
-            <div className="loader" />
-
-            <h3>
-              Scanning live matches...
-            </h3>
-
-            <p>
-              Connecting to football live data.
-            </p>
-
+          <div className="live-empty">
+            <div className="spinner" />
+            <h3>Connecting to live center...</h3>
           </div>
-
-        ) : !matches.length ? (
-
-          /* EMPTY */
-          <div className="live-state">
-
-            <strong>
-              NO LIVE MATCHES
-            </strong>
-
-            <p>
-              There are no matches being played right now.
-            </p>
-
+        ) : matches.length === 0 ? (
+          <div className="live-empty">
+            <div className="empty-ball">⚽</div>
+            <h3>No live matches</h3>
+            <p>There are no matches happening right now.</p>
           </div>
-
         ) : (
-
-          /* MATCH CARDS */
           <div className="live-grid">
+            {matches.map((match) => (
+              <article className="live-card" key={match.id}>
+                <div className="card-top">
+                  <div className="competition">
+                    {match.league_logo && (
+                      <img src={match.league_logo} alt="" />
+                    )}
+                    <span>{match.league_name || "Football"}</span>
+                  </div>
 
-            {matches.map(
-              (match: ApiEvent) => {
+                  <div className="live-pill">
+                    <i />
+                    {getMinute(match.status)}
+                  </div>
+                </div>
 
-                const homeTeam =
-                  getTeam(match, "home");
-
-                const awayTeam =
-                  getTeam(match, "away");
-
-                return (
-                  <article
-                    className="live-card"
-                    key={match.id}
-                  >
-
-                    <div className="card-top">
-
-                      <span>
-                        <i />
-                        LIVE
-                      </span>
-
-                      <small>
-                        {match.league?.name ||
-                          "Football"}
-                      </small>
-
+                <div className="score-area">
+                  <div className="club">
+                    <div className="club-logo">
+                      {match.home_logo ? (
+                        <img src={match.home_logo} alt={match.home_team} />
+                      ) : (
+                        "⚽"
+                      )}
                     </div>
+                    <strong>{match.home_team}</strong>
+                    <small>HOME</small>
+                  </div>
 
-                    <div className="card-teams">
+                  <div className="score">
+                    <strong>{match.score_home}</strong>
+                    <span>:</span>
+                    <strong>{match.score_away}</strong>
+                  </div>
 
-                      {/* HOME */}
-                      <div className="card-team">
-
-                        {homeTeam?.team?.logo ? (
-                          <img
-                            src={
-                              homeTeam.team.logo
-                            }
-                            alt={
-                              homeTeam.team
-                                .displayName ||
-                              "Home"
-                            }
-                          />
-                        ) : (
-                          <div className="fallback">
-                            H
-                          </div>
-                        )}
-
-                        <strong>
-                          {homeTeam?.team
-                            ?.displayName ||
-                            "Home"}
-                        </strong>
-
-                        <b>
-                          {homeTeam?.score ?? "0"}
-                        </b>
-
-                      </div>
-
-                      {/* CENTER */}
-                      <div className="card-vs">
-
-                        <span>
-                          LIVE
-                        </span>
-
-                        <strong>
-                          {getMatchTime(match)}
-                        </strong>
-
-                      </div>
-
-                      {/* AWAY */}
-                      <div className="card-team">
-
-                        {awayTeam?.team?.logo ? (
-                          <img
-                            src={
-                              awayTeam.team.logo
-                            }
-                            alt={
-                              awayTeam.team
-                                .displayName ||
-                              "Away"
-                            }
-                          />
-                        ) : (
-                          <div className="fallback">
-                            A
-                          </div>
-                        )}
-
-                        <strong>
-                          {awayTeam?.team
-                            ?.displayName ||
-                            "Away"}
-                        </strong>
-
-                        <b>
-                          {awayTeam?.score ?? "0"}
-                        </b>
-
-                      </div>
-
+                  <div className="club">
+                    <div className="club-logo">
+                      {match.away_logo ? (
+                        <img src={match.away_logo} alt={match.away_team} />
+                      ) : (
+                        "⚽"
+                      )}
                     </div>
+                    <strong>{match.away_team}</strong>
+                    <small>AWAY</small>
+                  </div>
+                </div>
 
-                    <div className="card-footer">
-
-                      <span>
-                        LIVE SCORE
-                      </span>
-
-                      <button>
-                        VIEW MATCH →
-                      </button>
-
-                    </div>
-
-                  </article>
-                );
-              }
-            )}
-
+                <div className="card-bottom">
+                  <span>● LIVE MATCH</span>
+                  <span>GOALZONE</span>
+                </div>
+              </article>
+            ))}
           </div>
-
         )}
-
       </section>
-
     </main>
   );
 }
-

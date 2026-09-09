@@ -1,0 +1,397 @@
+/* ================================
+   GOALZONE AI
+================================ */
+
+.ai-fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  width: 64px;
+  height: 64px;
+  border: 1px solid rgba(22, 199, 132, .45);
+  border-radius: 50%;
+  background: #101613;
+  color: #16c784;
+  cursor: pointer;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  box-shadow:
+    0 0 0 5px rgba(22, 199, 132, .06),
+    0 0 28px rgba(22, 199, 132, .3);
+  transition: .3s ease;
+  animation: aiFloat 3s ease-in-out infinite;
+}
+
+.ai-fab:hover {
+  transform: scale(1.08);
+  box-shadow:
+    0 0 0 7px rgba(22, 199, 132, .08),
+    0 0 40px rgba(22, 199, 132, .55);
+}
+
+.ai-fab .goalzone-ai-logo {
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 0 8px rgba(22, 199, 132, .35));
+}
+
+
+/* ================================
+   PANEL
+================================ */
+
+.ai-panel {
+  position: fixed;
+  right: 24px;
+  bottom: 100px;
+  width: 380px;
+  height: 540px;
+  background: #0d1210;
+  border: 1px solid #26352e;
+  border-radius: 22px;
+  overflow: hidden;
+  z-index: 9998;
+  display: flex;
+  flex-direction: column;
+  box-shadow:
+    0 25px 80px rgba(0, 0, 0, .65),
+    0 0 35px rgba(22, 199, 132, .08);
+  animation: aiOpen .25s ease;
+}
+
+
+/* ================================
+   HEADER
+================================ */
+
+.ai-header {
+  min-height: 72px;
+  padding: 14px 17px;
+  background:
+    linear-gradient(
+      135deg,
+      #151d19,
+      #101613
+    );
+  border-bottom: 1px solid #26352e;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ai-header > div {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.ai-header .goalzone-ai-logo {
+  width: 48px;
+  height: 48px;
+}
+
+.ai-header strong {
+  display: block;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.ai-header small {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+  color: #7f8c85;
+  font-size: 11px;
+}
+
+.ai-header small i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #16c784;
+  box-shadow: 0 0 9px rgba(22, 199, 132, .8);
+}
+
+.ai-close {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #7d8982;
+  font-size: 27px;
+  cursor: pointer;
+  transition: .2s;
+}
+
+.ai-close:hover {
+  background: #1b241f;
+  color: #fff;
+}
+
+
+/* ================================
+   MESSAGES
+================================ */
+
+.ai-messages {
+  flex: 1;
+  min-height: 0;
+  padding: 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #26352e transparent;
+}
+
+.ai-message {
+  max-width: 84%;
+  padding: 11px 14px;
+  border-radius: 15px;
+  color: #e8efeb;
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  word-break: break-word;
+  animation: messageIn .2s ease;
+}
+
+.ai-message.ai {
+  align-self: flex-start;
+  background: #18201c;
+  border: 1px solid #26352e;
+  border-top-left-radius: 5px;
+}
+
+.ai-message.user {
+  align-self: flex-end;
+  background: #16c784;
+  color: #06100b;
+  font-weight: 600;
+  border-top-right-radius: 5px;
+  box-shadow: 0 5px 18px rgba(22, 199, 132, .15);
+}
+
+
+/* ================================
+   INPUT
+================================ */
+
+.ai-input {
+  padding: 12px;
+  display: flex;
+  gap: 8px;
+  background: #0a0f0d;
+  border-top: 1px solid #26352e;
+}
+
+.ai-input input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid #293830;
+  outline: none;
+  border-radius: 13px;
+  padding: 0 13px;
+  background: #151b18;
+  color: #fff;
+  font-size: 13px;
+  transition: .2s;
+}
+
+.ai-input input:focus {
+  border-color: #16c784;
+  box-shadow: 0 0 0 3px rgba(22, 199, 132, .08);
+}
+
+.ai-input input::placeholder {
+  color: #68756e;
+}
+
+.ai-input input:disabled {
+  opacity: .6;
+}
+
+.ai-input button {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 13px;
+  background: #16c784;
+  color: #06100b;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 900;
+  transition: .2s;
+}
+
+.ai-input button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 7px 20px rgba(22, 199, 132, .3);
+}
+
+.ai-input button:disabled {
+  opacity: .3;
+  cursor: not-allowed;
+}
+
+
+/* ================================
+   TYPING
+================================ */
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 18px;
+}
+
+.typing i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #16c784;
+  animation: aiTyping 1s infinite;
+}
+
+.typing i:nth-child(2) {
+  animation-delay: .15s;
+}
+
+.typing i:nth-child(3) {
+  animation-delay: .3s;
+}
+
+
+/* ================================
+   SCROLLBAR
+================================ */
+
+.ai-messages::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ai-messages::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.ai-messages::-webkit-scrollbar-thumb {
+  background: #26352e;
+  border-radius: 10px;
+}
+
+.ai-messages::-webkit-scrollbar-thumb:hover {
+  background: #16c784;
+}
+
+
+/* ================================
+   ANIMATIONS
+================================ */
+
+@keyframes aiFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes aiOpen {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes messageIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes aiTyping {
+  0%,
+  60%,
+  100% {
+    opacity: .25;
+    transform: translateY(0);
+  }
+
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+
+/* ================================
+   MOBILE
+================================ */
+
+@media (max-width: 600px) {
+  .ai-panel {
+    right: 10px;
+    left: 10px;
+    bottom: 86px;
+    width: auto;
+    height: min(540px, 72vh);
+    border-radius: 18px;
+  }
+
+  .ai-fab {
+    right: 16px;
+    bottom: 16px;
+    width: 58px;
+    height: 58px;
+  }
+
+  .ai-fab .goalzone-ai-logo {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ai-messages {
+    padding: 14px;
+  }
+
+  .ai-message {
+    max-width: 88%;
+    font-size: 12.5px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-fab,
+  .ai-message,
+  .ai-panel {
+    animation: none;
+  }
+
+  .ai-fab,
+  .ai-close,
+  .ai-input button {
+    transition: none;
+  }
+}

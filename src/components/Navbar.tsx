@@ -1,87 +1,73 @@
-import { Link, NavLink } from "react-router-dom";
+import { useState } from "react";
+import { NavLink, Link } from "react-router-dom";
 import "./Navbar.css";
 
 export default function Navbar() {
+  const [open, setOpen] = useState(false);
+
+  const closeMenu = () => setOpen(false);
+
   return (
     <header className="navbar">
-
-      {/* LOGO */}
-      <Link to="/" className="nav-logo">
-        <div className="nav-logo-box">
-          <span>⚽</span>
-        </div>
-
-        <div className="nav-brand">
-          <div>
+      <div className="nav-inner">
+        <Link to="/" className="brand" onClick={closeMenu}>
+          <span className="brand-ball">⚽</span>
+          <span>
             <strong>GOAL</strong>
-            <em>ZONE</em>
-          </div>
-
-          <small>FOOTBALL MEDIA</small>
-        </div>
-      </Link>
-
-      {/* NAVIGATION */}
-      <nav className="nav-links">
-
-        <NavLink to="/" end>
-          <span className="nav-icon">⌂</span>
-          <span>Home</span>
-        </NavLink>
-
-        <NavLink to="/matches">
-          <span className="nav-icon">◉</span>
-          <span>Matches</span>
-        </NavLink>
-
-        <NavLink to="/live" className="live-link">
-          <span className="live-dot"></span>
-          <span>Live</span>
-        </NavLink>
-
-        <NavLink to="/leagues">
-          <span className="nav-icon">🏆</span>
-          <span>Leagues</span>
-        </NavLink>
-
-        <NavLink to="/transfers">
-          <span className="nav-icon">⇄</span>
-          <span>Transfers</span>
-        </NavLink>
-
-        <NavLink to="/news">
-          <span className="nav-icon">▤</span>
-          <span>News</span>
-        </NavLink>
-
-        <NavLink to="/favorites">
-          <span className="nav-icon">♡</span>
-          <span>Favorites</span>
-        </NavLink>
-
-      </nav>
-
-      {/* ACTIONS */}
-      <div className="nav-actions">
-
-        <button
-          className="notification"
-          aria-label="Notifications"
-        >
-          <span>♢</span>
-          <i></i>
-        </button>
-
-        <Link
-          to="/live"
-          className="live-button"
-        >
-          <span className="live-button-dot"></span>
-          LIVE
+            <b>ZONE</b>
+          </span>
         </Link>
 
-      </div>
+        <nav className={open ? "nav-links open" : "nav-links"}>
+          <NavLink to="/" end onClick={closeMenu}>
+            Home
+          </NavLink>
 
+          <NavLink to="/matches" onClick={closeMenu}>
+            Matches
+          </NavLink>
+
+          <NavLink to="/live" className="live-link" onClick={closeMenu}>
+            <i />
+            Live
+          </NavLink>
+
+          <NavLink to="/transfers" onClick={closeMenu}>
+            Transfers
+          </NavLink>
+
+          <NavLink to="/news" onClick={closeMenu}>
+            News
+          </NavLink>
+
+          <NavLink to="/leagues" onClick={closeMenu}>
+            Leagues
+          </NavLink>
+
+          <NavLink to="/favorites" onClick={closeMenu}>
+            Favorites
+          </NavLink>
+        </nav>
+
+        <div className="nav-actions">
+          <Link to="/live" className="live-button">
+            <span />
+            LIVE
+          </Link>
+
+          <button
+            className="menu-button"
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle navigation"
+            aria-expanded={open}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
+        </div>
+      </div>
     </header>
   );
 }

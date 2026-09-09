@@ -1,134 +1,207 @@
 import { useEffect, useState } from "react";
-import {
-  getLeagues,
-  type League,
-} from "../api/footballApi";
+import { Link } from "react-router-dom";
 import "./Leagues.css";
 
-const LEAGUE_LOGOS: Record<string, string> = {
-  "eng.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png",
-
-  "esp.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png",
-
-  "ger.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/10.png",
-
-  "ita.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png",
-
-  "fra.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/9.png",
-
-  "ned.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/11.png",
-
-  "por.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/14.png",
-
-  "bel.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/18.png",
-
-  "tur.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/33.png",
-
-  "sco.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/40.png",
-
-  "usa.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/19.png",
-
-  "bra.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/85.png",
-
-  "arg.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/202.png",
-
-  "mex.1":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/22.png",
-
-  "uefa.champions":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/2.png",
-
-  "uefa.europa":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/2310.png",
-
-  "fifa.world":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/8.png",
-
-  "caf.nations":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/50.png",
-
-  "conmebol.libertadores":
-    "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png",
+type League = {
+  id: string;
+  name: string;
+  country: string;
+  logo: string;
 };
 
+type Match = {
+  league_id: string | null;
+  status: string;
+};
+
+const LEAGUES: League[] = [
+  {
+    id: "eng.1",
+    name: "Premier League",
+    country: "England",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/23.png",
+  },
+  {
+    id: "esp.1",
+    name: "La Liga",
+    country: "Spain",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/15.png",
+  },
+  {
+    id: "ger.1",
+    name: "Bundesliga",
+    country: "Germany",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/10.png",
+  },
+  {
+    id: "ita.1",
+    name: "Serie A",
+    country: "Italy",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/12.png",
+  },
+  {
+    id: "fra.1",
+    name: "Ligue 1",
+    country: "France",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/9.png",
+  },
+  {
+    id: "uefa.champions",
+    name: "Champions League",
+    country: "Europe",
+    logo: "https://a.espncdn.com/i/leaguelogos/soccer/500/2.png",
+  },
+];
+
 export default function Leagues() {
-  const [leagues, setLeagues] = useState<League[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getLeagues()
-      .then(setLeagues)
-      .catch(console.error)
+    fetch("http://localhost:5000/api/matches")
+      .then((res) => res.json())
+      .then((data) => {
+        setMatches(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setMatches([]))
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) {
-    return (
-      <main className="leagues-page">
-        <div className="leagues-loading">
-          Loading leagues ⚽
-        </div>
-      </main>
-    );
-  }
+  const count = (id: string) =>
+    matches.filter((m) => m.league_id === id).length;
+
+  const liveCount = (id: string) =>
+    matches.filter(
+      (m) =>
+        m.league_id === id &&
+        /LIVE|IN PROGRESS|HALFTIME|1H|2H/i.test(m.status)
+    ).length;
+
+  const featured = LEAGUES[0];
 
   return (
     <main className="leagues-page">
       <section className="leagues-hero">
-        <span>GOALZONE</span>
+        <div className="hero-glow" />
 
-        <h1>Football Leagues</h1>
+        <div className="leagues-hero-inner">
+          <div className="hero-copy">
+            <span className="eyebrow">
+              <i />
+              GOALZONE • LEAGUE CENTER
+            </span>
 
-        <p>
-          Explore competitions from around the world
-        </p>
+            <h1>
+              THE WORLD
+              <br />
+              OF <b>FOOTBALL.</b>
+            </h1>
+
+            <p>
+              Explore the biggest competitions, fixtures and live football
+              from around the world.
+            </p>
+          </div>
+
+          <div className="hero-league">
+            <span>FEATURED COMPETITION</span>
+
+            <img src={featured.logo} alt={featured.name} />
+
+            <strong>{featured.name}</strong>
+            <small>{featured.country}</small>
+
+            <Link to="/matches">EXPLORE LEAGUE →</Link>
+          </div>
+        </div>
       </section>
 
-      <section className="leagues-grid">
-        {leagues.map((league) => {
-          const logo =
-            LEAGUE_LOGOS[league.id];
+      <section className="leagues-section">
+        <header className="section-title">
+          <div>
+            <span>COMPETITIONS</span>
+            <h2>
+              Football <b>Leagues</b>
+            </h2>
+          </div>
 
-          return (
-            <article
-              className="league-card"
-              key={league.id}
-            >
-              <div className="league-icon">
-                {logo ? (
-                  <img
-                    src={logo}
-                    alt={league.name}
-                  />
-                ) : (
-                  <span>🏆</span>
-                )}
-              </div>
+          <strong>{LEAGUES.length} LEAGUES</strong>
+        </header>
 
-              <div className="league-info">
-                <h2>{league.name}</h2>
-                <p>{league.country}</p>
-              </div>
+        <div className="league-feature">
+          <div className="feature-info">
+            <span>01 • FEATURED</span>
 
-              <span className="league-arrow">
-                →
-              </span>
-            </article>
-          );
-        })}
+            <img src={featured.logo} alt={featured.name} />
+
+            <div>
+              <h3>{featured.name}</h3>
+              <p>{featured.country} • Top Flight</p>
+            </div>
+          </div>
+
+          <div className="feature-stats">
+            <div>
+              <strong>{count(featured.id)}</strong>
+              <span>MATCHES</span>
+            </div>
+
+            <div className="live-number">
+              <strong>{liveCount(featured.id)}</strong>
+              <span>LIVE NOW</span>
+            </div>
+          </div>
+
+          <Link to="/matches" className="feature-arrow">
+            →
+          </Link>
+        </div>
+
+        <div className="league-grid">
+          {LEAGUES.slice(1).map((league, index) => {
+            const total = count(league.id);
+            const live = liveCount(league.id);
+
+            return (
+              <article className="league-card" key={league.id}>
+                <div className="league-card-top">
+                  <span>0{index + 2}</span>
+
+                  {live > 0 && (
+                    <b className="live-tag">
+                      <i />
+                      {live} LIVE
+                    </b>
+                  )}
+                </div>
+
+                <div className="league-logo">
+                  <img src={league.logo} alt={league.name} />
+                </div>
+
+                <div className="league-card-info">
+                  <h3>{league.name}</h3>
+                  <p>{league.country}</p>
+                </div>
+
+                <div className="league-card-bottom">
+                  <span>
+                    <b>{total}</b> MATCHES
+                  </span>
+
+                  <Link to="/matches">VIEW →</Link>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+
+        {loading && (
+          <div className="league-loading">
+            <span />
+            Loading league data...
+          </div>
+        )}
       </section>
     </main>
   );
