@@ -1,301 +1,280 @@
-import { useEffect, useMemo, useState } from "react";
-import { getTransfers, LEAGUES, type Transfer } from "../api/footballApi";
+import { useEffect, useState } from "react";
 import "./Transfers.css";
 
-const leagues = [
-  ["all", "ALL LEAGUES"],
-  [LEAGUES.premierLeague, "PREMIER LEAGUE"],
-  [LEAGUES.laLiga, "LA LIGA"],
-  [LEAGUES.bundesliga, "BUNDESLIGA"],
-  [LEAGUES.serieA, "SERIE A"],
-  [LEAGUES.ligue1, "LIGUE 1"],
-] as const;
+type Transfer = {
+id: number;
+player_name: string;
+player_photo?: string;
+from_team?: string;
+from_logo?: string;
+to_team?: string;
+to_logo?: string;
+transfer_fee?: string;
+position?: string;
+transfer_date?: string;
+league_name?: string;
+};
 
-const STEP = 6;
+const DEMO_TRANSFERS: Transfer[] = [
+{
+id: 1,
+player_name: "Marcus Vale",
+player_photo: "https://i.pravatar.cc/500?img=12",
+from_team: "Arsenal",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+to_team: "Barcelona",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
+transfer_fee: "€85M",
+position: "Winger",
+transfer_date: "2026-07-12",
+league_name: "Premier League",
+},
+{
+id: 2,
+player_name: "Daniel Cruz",
+player_photo: "https://i.pravatar.cc/500?img=13",
+from_team: "Chelsea",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+to_team: "Real Madrid",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
+transfer_fee: "€110M",
+position: "Forward",
+transfer_date: "2026-07-18",
+league_name: "Premier League",
+},
+{
+id: 3,
+player_name: "Leo Martins",
+player_photo: "https://i.pravatar.cc/500?img=14",
+from_team: "Inter",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
+to_team: "Manchester City",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+transfer_fee: "€72M",
+position: "Midfielder",
+transfer_date: "2026-07-21",
+league_name: "Serie A",
+},
+{
+id: 4,
+player_name: "Noah Silva",
+player_photo: "https://i.pravatar.cc/500?img=15",
+from_team: "Benfica",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/1929.png",
+to_team: "Liverpool",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
+transfer_fee: "€64M",
+position: "Defender",
+transfer_date: "2026-07-25",
+league_name: "Primeira Liga",
+},
+{
+id: 5,
+player_name: "Adam Rossi",
+player_photo: "https://i.pravatar.cc/500?img=16",
+from_team: "AC Milan",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/103.png",
+to_team: "Bayern Munich",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
+transfer_fee: "€58M",
+position: "Midfielder",
+transfer_date: "2026-07-29",
+league_name: "Serie A",
+},
+{
+id: 6,
+player_name: "Lucas Stone",
+player_photo: "https://i.pravatar.cc/500?img=17",
+from_team: "PSG",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/160.png",
+to_team: "Manchester United",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
+transfer_fee: "€91M",
+position: "Forward",
+transfer_date: "2026-08-02",
+league_name: "Ligue 1",
+},
+];
 
 export default function Transfers() {
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [league, setLeague] = useState("all");
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [visible, setVisible] = useState(STEP);
+const [transfers, setTransfers] = useState<Transfer[]>([]);
+const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setVisible(STEP);
+useEffect(() => {
+fetch("http://localhost:5000/api/transfers")
+.then((res) => {
+if (!res.ok) throw new Error("API error");
+return res.json();
+})
+.then((data) => {
+setTransfers(
+Array.isArray(data) && data.length
+? data
+: DEMO_TRANSFERS
+);
+})
+.catch(() => {
+setTransfers(DEMO_TRANSFERS);
+})
+.finally(() => setLoading(false));
+}, []);
 
-      const selected =
-        league === "all"
-          ? leagues.slice(1).map(x => x[0])
-          : [league];
+return ( <main className="transfers-page">
 
-      const data = await Promise.all(
-        selected.map(x => getTransfers(x).catch(() => []))
-      );
+```
+  <section className="transfers-hero">
+    <div className="transfers-overlay" />
 
-      setTransfers([
-        ...new Map(
-          data.flat().map(x => [x.id, x])
-        ).values(),
-      ]);
+    <div className="transfers-hero-content">
+      <span>GOALZONE TRANSFER CENTER</span>
 
-      setLoading(false);
-    };
+      <h1>
+        FOOTBALL <b>TRANSFERS</b>
+      </h1>
 
-    load();
-  }, [league]);
+      <p>
+        Latest moves, new clubs and transfer news.
+      </p>
+    </div>
+  </section>
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
+  <section className="transfers-section">
 
-    if (!q) return transfers;
+    <div className="section-heading">
+      <span>TRANSFER CENTER</span>
 
-    return transfers.filter(x =>
-      `${x.player} ${x.from} ${x.to} ${x.type}`
-        .toLowerCase()
-        .includes(q)
-    );
-  }, [transfers, search]);
+      <h2>
+        Latest <b>Transfers</b>
+      </h2>
+    </div>
 
-  useEffect(() => {
-    setVisible(STEP);
-  }, [search]);
+    {loading ? (
+      <div className="transfer-state">
+        <div className="spinner" />
+        Loading transfers...
+      </div>
+    ) : (
+      <div className="transfers-grid">
 
-  const shown = filtered.slice(0, visible);
-  const hasMore = visible < filtered.length;
-  const expanded = visible > STEP;
+        {transfers.map((transfer) => (
+          <article
+            className="transfer-card"
+            key={transfer.id}
+          >
 
-  return (
-    <main className="transfers-page">
+            <div className="transfer-top">
+              <span>
+                {transfer.league_name || "FOOTBALL"}
+              </span>
 
-      <section className="transfers-hero">
-        <div className="transfer-grid" />
-        <div className="transfer-glow glow-one" />
-        <div className="transfer-glow glow-two" />
-
-        <div className="transfers-container hero-inner">
-
-          <div className="hero-copy">
-            <div className="eyebrow">
-              <i />
-              GOALZONE · TRANSFER CENTER
+              <b>DEMO</b>
             </div>
 
-            <h1>
-              TRANSFER
-              <strong>MARKET.</strong>
-            </h1>
+            <div className="player">
 
-            <p>
-              Track the latest football moves,
-              signings and club changes from
-              the biggest leagues.
-            </p>
-
-            <div className="hero-stats">
-              <div>
-                <strong>{filtered.length}</strong>
-                <span>TRANSFERS</span>
-              </div>
-
-              <div>
-                <strong>05</strong>
-                <span>LEAGUES</span>
-              </div>
-
-              <div>
-                <strong>LIVE</strong>
-                <span>UPDATES</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="transfer-board">
-            <div className="board-top">
-              <span>TRANSFER MARKET</span>
-              <b>LIVE</b>
-            </div>
-
-            <div className="market-player">
-              <div className="mini-avatar">P</div>
-              <div>
-                <small>PLAYER</small>
-                <strong>TRANSFER</strong>
-              </div>
-            </div>
-
-            <div className="market-move">
-              <div />
-              <strong>→</strong>
-              <div />
-            </div>
-
-            <div className="market-clubs">
-              <span>OLD CLUB</span>
-              <b>NEW CLUB</b>
-            </div>
-
-            <div className="board-bottom">
-              <span>LATEST MOVES</span>
-              <strong>GOALZONE</strong>
-            </div>
-          </div>
-
-        </div>
-      </section>
-
-      <section className="transfers-container transfers-section">
-
-        <div className="section-head">
-          <div>
-            <span>TRANSFER MARKET</span>
-            <h2>
-              Latest <strong>Moves</strong>
-            </h2>
-          </div>
-
-          <div className="transfer-count">
-            <strong>{filtered.length}</strong>
-            <span>MOVES</span>
-          </div>
-        </div>
-
-        <div className="transfer-tools">
-
-          <div className="league-tabs">
-            {leagues.map(([id, name]) => (
-              <button
-                key={id}
-                className={league === id ? "active" : ""}
-                onClick={() => setLeague(id)}
-              >
-                {name}
-              </button>
-            ))}
-          </div>
-
-          <input
-            type="search"
-            placeholder="Search player or club..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-
-        </div>
-
-        {loading ? (
-          <div className="transfer-state">
-            <div className="loader" />
-            <h3>LOADING TRANSFERS...</h3>
-            <p>Connecting to transfer market.</p>
-          </div>
-        ) : !filtered.length ? (
-          <div className="transfer-state">
-            <div className="empty-icon">↔</div>
-            <h3>NO TRANSFERS FOUND</h3>
-            <p>There are no transfer updates available.</p>
-          </div>
-        ) : (
-          <>
-            <div className="transfer-list">
-
-              {shown.map(t => (
-                <article className="transfer-card" key={t.id}>
-
-                  <div className="player">
-                    {t.playerImage ? (
-                      <img src={t.playerImage} alt={t.player} />
-                    ) : (
-                      <div className="player-avatar">
-                        {t.player[0]}
-                      </div>
-                    )}
-
-                    <div className="player-info">
-                      <strong>{t.player}</strong>
-                      <span>{t.type}</span>
-                    </div>
-                  </div>
-
-                  <div className="club">
-                    <div className="club-logo">
-                      {t.fromLogo ? (
-                        <img src={t.fromLogo} alt="" />
-                      ) : "⚽"}
-                    </div>
-
-                    <div>
-                      <small>FROM</small>
-                      <strong>{t.from}</strong>
-                    </div>
-                  </div>
-
-                  <div className="move-arrow">→</div>
-
-                  <div className="club">
-                    <div className="club-logo">
-                      {t.toLogo ? (
-                        <img src={t.toLogo} alt="" />
-                      ) : "⚽"}
-                    </div>
-
-                    <div>
-                      <small>TO</small>
-                      <strong>{t.to}</strong>
-                    </div>
-                  </div>
-
-                  <div className="transfer-fee">
-                    <small>TRANSFER FEE</small>
-                    <strong>{t.fee}</strong>
-                  </div>
-
-                </article>
-              ))}
-
-            </div>
-
-            {filtered.length > STEP && (
-              <div className="transfers-more">
-
-                {hasMore && (
-                  <button onClick={() => setVisible(v => v + STEP)}>
-                    SHOW MORE ↓
-                  </button>
+              <div className="player-photo">
+                {transfer.player_photo ? (
+                  <img
+                    src={transfer.player_photo}
+                    alt={transfer.player_name}
+                  />
+                ) : (
+                  <span>⚽</span>
                 )}
+              </div>
 
-                {!hasMore && expanded && (
-                  <button onClick={() => setVisible(STEP)}>
-                    SEE LESS ↑
-                  </button>
-                )}
+              <h3>{transfer.player_name}</h3>
 
-                {expanded && (
-                  <button
-                    className="start-btn"
-                    onClick={() => {
-                      setVisible(STEP);
-                      window.scrollTo({
-                        top: 0,
-                        behavior: "smooth",
-                      });
-                    }}
-                  >
-                    BACK TO START ↺
-                  </button>
-                )}
+              <small>
+                {transfer.position || "Player"}
+              </small>
 
-                <small>
-                  SHOWING {shown.length} OF {filtered.length} MOVES
-                </small>
+            </div>
+
+            <div className="clubs">
+
+              <div className="club">
+
+                <div className="club-logo">
+                  {transfer.from_logo ? (
+                    <img
+                      src={transfer.from_logo}
+                      alt={transfer.from_team}
+                    />
+                  ) : (
+                    "⚽"
+                  )}
+                </div>
+
+                <strong>
+                  {transfer.from_team || "Unknown"}
+                </strong>
 
               </div>
-            )}
-          </>
-        )}
 
-      </section>
-    </main>
-  );
+              <div className="transfer-arrow">
+                →
+              </div>
+
+              <div className="club">
+
+                <div className="club-logo">
+                  {transfer.to_logo ? (
+                    <img
+                      src={transfer.to_logo}
+                      alt={transfer.to_team}
+                    />
+                  ) : (
+                    "⚽"
+                  )}
+                </div>
+
+                <strong>
+                  {transfer.to_team || "Unknown"}
+                </strong>
+
+              </div>
+
+            </div>
+
+            <div className="transfer-bottom">
+
+              <span>
+                {transfer.transfer_date
+                  ? new Date(
+                      transfer.transfer_date
+                    ).toLocaleDateString()
+                  : "Recently"}
+              </span>
+
+              <strong>
+                {transfer.transfer_fee ||
+                  "Undisclosed"}
+              </strong>
+
+            </div>
+
+          </article>
+        ))}
+
+      </div>
+    )}
+
+  </section>
+</main>
+
+
+);
 }

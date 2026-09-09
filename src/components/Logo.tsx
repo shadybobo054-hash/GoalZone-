@@ -9,24 +9,20 @@ export default function Logo() {
         xmlns="http://www.w3.org/2000/svg"
       >
         <defs>
-
-          {/* PURPLE */}
-          <linearGradient id="gz-purple" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#f0abfc" />
-            <stop offset="45%" stopColor="#a855f7" />
-            <stop offset="100%" stopColor="#22d3ee" />
+          <linearGradient id="gz-green" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#dcfce7" />
+            <stop offset="45%" stopColor="#22c55e" />
+            <stop offset="100%" stopColor="#86efac" />
           </linearGradient>
 
-          {/* SCREEN */}
           <linearGradient id="gz-screen" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#32105a" />
-            <stop offset="50%" stopColor="#10091c" />
-            <stop offset="100%" stopColor="#061c28" />
+            <stop offset="0%" stopColor="#12351f" />
+            <stop offset="50%" stopColor="#07140c" />
+            <stop offset="100%" stopColor="#061c12" />
           </linearGradient>
 
-          {/* BALL BODY */}
           <radialGradient id="gz-ball" cx="28%" cy="20%" r="82%">
-            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="0%" stopColor="#fff" />
             <stop offset="30%" stopColor="#f8f8fa" />
             <stop offset="55%" stopColor="#d8d8dd" />
             <stop offset="73%" stopColor="#a5a5ad" />
@@ -34,20 +30,17 @@ export default function Logo() {
             <stop offset="100%" stopColor="#17161c" />
           </radialGradient>
 
-          {/* BALL SHINE */}
           <radialGradient id="gz-shine">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity=".9" />
-            <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
+            <stop offset="0%" stopColor="#fff" stopOpacity=".9" />
+            <stop offset="100%" stopColor="#fff" stopOpacity="0" />
           </radialGradient>
 
-          {/* BALL DARK */}
           <linearGradient id="gz-ball-dark" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#35333b" />
             <stop offset="50%" stopColor="#111015" />
             <stop offset="100%" stopColor="#050507" />
           </linearGradient>
 
-          {/* GLOW */}
           <filter id="gz-glow">
             <feGaussianBlur stdDeviation="5" result="blur" />
             <feMerge>
@@ -56,7 +49,6 @@ export default function Logo() {
             </feMerge>
           </filter>
 
-          {/* BALL SHADOW */}
           <filter id="gz-shadow">
             <feDropShadow
               dx="0"
@@ -67,68 +59,58 @@ export default function Logo() {
             />
           </filter>
 
-          {/* BALL CLIP */}
           <clipPath id="gz-ball-clip">
             <circle cx="450" cy="170" r="100" />
           </clipPath>
-
         </defs>
 
-        {/* BACK GLOW */}
-
+        {/* GREEN GLOW */}
         <ellipse
           cx="450"
           cy="175"
           rx="300"
           ry="150"
-          fill="#8b5cf6"
-          opacity=".09"
+          fill="#22c55e"
+          opacity=".08"
           filter="url(#gz-glow)"
         />
 
-        {/* SPEED */}
-
-        <g
-          className="gz-speed"
-          fill="none"
-          strokeLinecap="round"
-        >
+        {/* SPEED LINES */}
+        <g fill="none" strokeLinecap="round">
           <path
             d="M55 185 C160 105 260 100 350 135"
-            stroke="#a855f7"
+            stroke="#22c55e"
             strokeWidth="8"
           />
 
           <path
             d="M45 220 C155 140 255 125 355 150"
-            stroke="#22d3ee"
+            stroke="#86efac"
             strokeWidth="4"
           />
 
           <path
             d="M555 105 C680 60 775 95 850 145"
-            stroke="#a855f7"
+            stroke="#22c55e"
             strokeWidth="6"
           />
 
           <path
             d="M570 130 C690 90 790 125 860 175"
-            stroke="#22d3ee"
+            stroke="#86efac"
             strokeWidth="3"
           />
         </g>
 
         {/* STADIUM LIGHTS */}
-
-        <g className="gz-lights" filter="url(#gz-glow)">
-
+        <g filter="url(#gz-glow)">
           <rect
             x="640"
             y="30"
             width="150"
             height="7"
             rx="4"
-            fill="url(#gz-purple)"
+            fill="url(#gz-green)"
           />
 
           <circle cx="655" cy="58" r="5" fill="#fff" />
@@ -141,13 +123,10 @@ export default function Logo() {
           <circle cx="667" cy="82" r="5" fill="#fff" />
           <circle cx="693" cy="82" r="5" fill="#fff" />
           <circle cx="719" cy="82" r="5" fill="#fff" />
-
         </g>
 
         {/* SCREEN */}
-
-        <g className="gz-screen" filter="url(#gz-shadow)">
-
+        <g filter="url(#gz-shadow)">
           <rect
             x="275"
             y="55"
@@ -155,7 +134,7 @@ export default function Logo() {
             height="235"
             rx="40"
             fill="#07060b"
-            stroke="url(#gz-purple)"
+            stroke="url(#gz-green)"
             strokeWidth="7"
           />
 
@@ -170,19 +149,17 @@ export default function Logo() {
 
           <path
             d="M320 105 H580"
-            stroke="#a855f7"
+            stroke="#22c55e"
             strokeWidth="2"
             opacity=".25"
           />
 
           <path
             d="M320 245 H575"
-            stroke="#22d3ee"
+            stroke="#86efac"
             strokeWidth="2"
             opacity=".2"
           />
-
-          {/* PLAY BUTTON */}
 
           <circle
             cx="545"
@@ -202,13 +179,11 @@ export default function Logo() {
 
           <path
             d="M535 149 L535 191 L570 170 Z"
-            fill="#7c3aed"
+            fill="#15803d"
           />
-
         </g>
 
         {/* BALL SHADOW */}
-
         <ellipse
           cx="450"
           cy="285"
@@ -219,17 +194,8 @@ export default function Logo() {
           filter="url(#gz-glow)"
         />
 
-        {/* =========================
-            REALISTIC BALL
-        ========================= */}
-
-        <g
-          className="gz-ball"
-          filter="url(#gz-shadow)"
-        >
-
-          {/* BALL */}
-
+        {/* FOOTBALL */}
+        <g filter="url(#gz-shadow)">
           <circle
             cx="450"
             cy="170"
@@ -238,8 +204,6 @@ export default function Logo() {
             stroke="#111016"
             strokeWidth="3"
           />
-
-          {/* OUTER SHADOW */}
 
           <circle
             cx="450"
@@ -252,9 +216,6 @@ export default function Logo() {
           />
 
           <g clipPath="url(#gz-ball-clip)">
-
-            {/* CENTRAL PENTAGON */}
-
             <path
               d="
                 M450 112
@@ -266,8 +227,6 @@ export default function Logo() {
               "
               fill="url(#gz-ball-dark)"
             />
-
-            {/* CENTRAL INNER PANEL */}
 
             <path
               d="
@@ -281,8 +240,6 @@ export default function Logo() {
               fill="#08070b"
             />
 
-            {/* PANEL CONNECTIONS */}
-
             <g
               fill="none"
               stroke="#15131a"
@@ -290,24 +247,14 @@ export default function Logo() {
               strokeLinecap="round"
               strokeLinejoin="round"
             >
-
               <path d="M450 112 L450 55" />
-
               <path d="M493 143 L555 120" />
-
               <path d="M477 196 L520 260" />
-
               <path d="M423 196 L380 260" />
-
               <path d="M407 143 L345 120" />
-
               <path d="M407 143 L365 195" />
-
               <path d="M493 143 L535 195" />
-
             </g>
-
-            {/* PANEL HIGHLIGHTS */}
 
             <g
               fill="none"
@@ -315,20 +262,12 @@ export default function Logo() {
               strokeWidth="2"
               opacity=".55"
             >
-
               <path d="M450 55 L493 143" />
-
               <path d="M493 143 L477 196" />
-
               <path d="M477 196 L423 196" />
-
               <path d="M423 196 L407 143" />
-
               <path d="M407 143 L450 55" />
-
             </g>
-
-            {/* DARK PANEL DETAILS */}
 
             <path
               d="M345 120 Q380 100 410 115"
@@ -346,15 +285,13 @@ export default function Logo() {
               opacity=".8"
             />
 
-            {/* PURPLE REFLECTION */}
-
             <ellipse
               cx="515"
               cy="215"
               rx="48"
               ry="22"
-              fill="#a855f7"
-              opacity=".2"
+              fill="#22c55e"
+              opacity=".16"
             />
 
             <ellipse
@@ -362,14 +299,12 @@ export default function Logo() {
               cy="220"
               rx="25"
               ry="10"
-              fill="#22d3ee"
-              opacity=".1"
+              fill="#86efac"
+              opacity=".08"
             />
-
           </g>
 
-          {/* REALISTIC HIGHLIGHT */}
-
+          {/* BALL SHINE */}
           <ellipse
             cx="410"
             cy="105"
@@ -389,33 +324,21 @@ export default function Logo() {
             transform="rotate(-28 397 96)"
           />
 
-          {/* EDGE LIGHT */}
-
           <path
-            d="
-              M375 92
-              C345 125 340 180 365 220
-            "
+            d="M375 92 C345 125 340 180 365 220"
             fill="none"
             stroke="#fff"
             strokeWidth="4"
             opacity=".18"
           />
 
-          {/* PURPLE EDGE REFLECTION */}
-
           <path
-            d="
-              M515 90
-              C555 120 565 175 540 215
-            "
+            d="M515 90 C555 120 565 175 540 215"
             fill="none"
-            stroke="#a855f7"
+            stroke="#22c55e"
             strokeWidth="5"
             opacity=".25"
           />
-
-          {/* FINAL GLASS SHINE */}
 
           <circle
             cx="450"
@@ -426,18 +349,15 @@ export default function Logo() {
             strokeWidth="3"
             opacity=".08"
           />
-
         </g>
 
-        {/* FRONT LIGHT TRAILS */}
-
+        {/* LOWER GREEN LINES */}
         <g
           fill="none"
-          stroke="url(#gz-purple)"
+          stroke="url(#gz-green)"
           strokeLinecap="round"
           filter="url(#gz-glow)"
         >
-
           <path
             d="M350 235 C395 285 505 292 555 225"
             strokeWidth="4"
@@ -449,48 +369,55 @@ export default function Logo() {
             strokeWidth="2"
             opacity=".45"
           />
-
         </g>
 
-        {/* BRAND */}
-
+        {/* GOAL ZONE */}
         <text
           x="450"
           y="350"
           textAnchor="middle"
-          className="gz-brand"
+          fontFamily="Arial, Helvetica, sans-serif"
+          fontSize="68"
+          fontWeight="900"
+          fontStyle="italic"
+          letterSpacing="-3"
+          fill="#ffffff"
+          stroke="#050706"
+          strokeWidth="3"
+          paintOrder="stroke"
+          style={{
+            display: "block",
+            opacity: 1,
+            visibility: "visible",
+          }}
         >
-          <tspan className="gz-goal">
-            GOAL
-          </tspan>
-
-          <tspan className="gz-zone">
-            {" "}ZONE
-          </tspan>
+          <tspan fill="#ffffff">GOAL</tspan>
+          <tspan fill="#ffffff"> ZONE</tspan>
         </text>
 
-        {/* LINE */}
-
+        {/* DIVIDER */}
         <line
           x1="270"
           y1="370"
           x2="630"
           y2="370"
-          stroke="url(#gz-purple)"
+          stroke="url(#gz-green)"
           strokeWidth="2"
         />
 
-        {/* SUBTITLE */}
-
+        {/* FOOTBALL MEDIA */}
         <text
           x="450"
           y="395"
           textAnchor="middle"
-          className="gz-media"
+          fontFamily="Arial, Helvetica, sans-serif"
+          fontSize="14"
+          fontWeight="800"
+          letterSpacing="8"
+          fill="#8a938d"
         >
           FOOTBALL MEDIA
         </text>
-
       </svg>
     </div>
   );
