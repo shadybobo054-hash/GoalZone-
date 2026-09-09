@@ -23,159 +23,285 @@ type ApiResponse = {
   matches?: Match[];
 };
 
+const API_URL = "http://127.0.0.1:5000/api/matches";
+
+function dateKey(date: Date) {
+  return `${date.getFullYear()}-${String(
+    date.getMonth() + 1
+  ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function matchDateKey(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "";
+
+  return dateKey(date);
+}
+
+function getTime(value: string) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return "TBA";
+
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getDayName(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    weekday: "short",
+  });
+}
+
+function getMonth(date: Date) {
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+  });
+}
+
+function isLive(status: string) {
+  const value = status.toUpperCase();
+
+  return (
+    value.includes("LIVE") ||
+    value.includes("IN PROGRESS")
+  );
+}
+
+function isScheduled(status: string) {
+  const value = status.toUpperCase();
+
+  return (
+    value.includes("SCHEDULED") ||
+    value.includes("UPCOMING") ||
+    value.includes("TBA")
+  );
+}
+
+function normalizeMatches(list: Match[]) {
+  return Array.from(
+    new Map(
+      list.map((match) => [
+        match.source_id ||
+          `${match.home_team}-${match.away_team}-${match.match_date}`,
+        match,
+      ])
+    ).values()
+  );
+}
+
 export default function Matches() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/api/matches")
-      .then((res) => {
+    const controller = new AbortController();
+
+    async function loadMatches() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const res = await fetch(API_URL, {
+          signal: controller.signal,
+          cache: "no-store",
+        });
+
         if (!res.ok) {
           throw new Error(`Server Error ${res.status}`);
         }
-        return res.json();
-      })
-      .then((data: Match[] | ApiResponse) => {
+
+        const data: Match[] | ApiResponse = await res.json();
+
         const list = Array.isArray(data)
           ? data
           : Array.isArray(data.matches)
             ? data.matches
             : [];
 
-        const unique = Array.from(
-          new Map(
-            list.map((match) => [
-              match.source_id ||
-                `${match.home_team}-${match.away_team}-${match.match_date}`,
-              match,
-            ])
-          ).values()
-        );
+        const unique = normalizeMatches(list);
 
-        setMatches(unique);
-
-        // لو النهارده مفيهوش ماتشات، اختار أقرب يوم فيه ماتش
+        /*
+         * مهم:
+         * لا نمسح البيانات القديمة لو السيرفر رجع
+         * مصفوفة فاضية مؤقتًا.
+         */
         if (unique.length > 0) {
+          setMatches(unique);
+
           const todayKey = dateKey(new Date());
 
-          const hasToday = unique.some(
-            (match) => matchDateKey(match.match_date) === todayKey
+          const todayMatches = unique.filter(
+            (match) =>
+              matchDateKey(match.match_date) === todayKey
           );
 
-          if (!hasToday) {
-            const sortedDates = unique
+          if (todayMatches.length > 0) {
+            setSelectedDate(new Date());
+          } else {
+            const future = unique
               .map((match) => new Date(match.match_date))
-              .filter((date) => !Number.isNaN(date.getTime()))
+              .filter(
+                (date) =>
+                  !Number.isNaN(date.getTime()) &&
+                  date.getTime() >= Date.now()
+              )
               .sort(
                 (a, b) =>
-                  Math.abs(a.getTime() - Date.now()) -
-                  Math.abs(b.getTime() - Date.now())
+                  a.getTime() - b.getTime()
               );
 
-            if (sortedDates[0]) {
-              setSelectedDate(sortedDates[0]);
+            if (future[0]) {
+              setSelectedDate(future[0]);
+            } else {
+              const nearest = unique
+                .map(
+                  (match) =>
+                    new Date(match.match_date)
+                )
+                .filter(
+                  (date) =>
+                    !Number.isNaN(date.getTime())
+                )
+                .sort(
+                  (a, b) =>
+                    Math.abs(
+                      a.getTime() - Date.now()
+                    ) -
+                    Math.abs(
+                      b.getTime() - Date.now()
+                    )
+                );
+
+              if (nearest[0]) {
+                setSelectedDate(nearest[0]);
+              }
             }
           }
+        } else {
+          /*
+           * لو مفيش بيانات جديدة، نحتفظ بالقديمة.
+           */
+          if (matches.length === 0) {
+            setError("No matches available right now.");
+          }
         }
-      })
-      .catch((err) => {
-        console.error("Matches error:", err);
-        setMatches([]);
-      })
-      .finally(() => setLoading(false));
+      } catch (err) {
+        if (
+          err instanceof DOMException &&
+          err.name === "AbortError"
+        ) {
+          return;
+        }
+
+        console.error("❌ Matches error:", err);
+
+        /*
+         * أهم تعديل:
+         * ممنوع setMatches([]) هنا.
+         */
+        setError(
+          "Unable to refresh matches. Showing saved data."
+        );
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadMatches();
+
+    return () => {
+      controller.abort();
+    };
   }, []);
-
-  function dateKey(date: Date) {
-    return `${date.getFullYear()}-${String(
-      date.getMonth() + 1
-    ).padStart(2, "0")}-${String(
-      date.getDate()
-    ).padStart(2, "0")}`;
-  }
-
-  function matchDateKey(value: string) {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "";
-
-    return dateKey(date);
-  }
 
   const selectedKey = dateKey(selectedDate);
 
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date(selectedDate);
-      date.setDate(selectedDate.getDate() - 3 + i);
+
+      date.setDate(
+        selectedDate.getDate() - 3 + i
+      );
+
       return date;
     });
   }, [selectedDate]);
 
-  const dayMatches = matches.filter(
-    (match) => matchDateKey(match.match_date) === selectedKey
+  const dayMatches = useMemo(
+    () =>
+      matches.filter(
+        (match) =>
+          matchDateKey(match.match_date) ===
+          selectedKey
+      ),
+    [matches, selectedKey]
   );
 
-  const leagues = Array.from(
-    new Set(
-      dayMatches.map((match) => match.league_id || "other")
-    )
+  const leagues = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          dayMatches.map(
+            (match) => match.league_id || "other"
+          )
+        )
+      ),
+    [dayMatches]
   );
 
   function changeDay(amount: number) {
     const next = new Date(selectedDate);
-    next.setDate(next.getDate() + amount);
+
+    next.setDate(
+      next.getDate() + amount
+    );
+
     setSelectedDate(next);
   }
 
   function goToday() {
-    setSelectedDate(new Date());
-  }
+    const today = new Date();
 
-  function getTime(value: string) {
-    const date = new Date(value);
-
-    if (Number.isNaN(date.getTime())) return "TBA";
-
-    return date.toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  }
-
-  function getDayName(date: Date) {
-    return date.toLocaleDateString("en-US", {
-      weekday: "short",
-    });
-  }
-
-  function getMonth(date: Date) {
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-    });
-  }
-
-  function isLive(status: string) {
-    const value = status.toUpperCase();
-
-    return (
-      value.includes("LIVE") ||
-      value.includes("IN PROGRESS")
+    const hasToday = matches.some(
+      (match) =>
+        matchDateKey(match.match_date) ===
+        dateKey(today)
     );
-  }
 
-  function isScheduled(status: string) {
-    const value = status.toUpperCase();
+    if (hasToday) {
+      setSelectedDate(today);
+      return;
+    }
 
-    return (
-      value.includes("SCHEDULED") ||
-      value.includes("UPCOMING")
-    );
+    const future = matches
+      .map(
+        (match) =>
+          new Date(match.match_date)
+      )
+      .filter(
+        (date) =>
+          !Number.isNaN(date.getTime()) &&
+          date.getTime() >= Date.now()
+      )
+      .sort(
+        (a, b) =>
+          a.getTime() - b.getTime()
+      );
+
+    setSelectedDate(future[0] || today);
   }
 
   return (
     <main className="matches-page">
-
       <section className="matches-hero">
         <div className="matches-hero-content">
           <span>GOALZONE • MATCH CENTER</span>
@@ -191,7 +317,6 @@ export default function Matches() {
       </section>
 
       <section className="matches-section">
-
         <div className="matches-heading">
           <div>
             <span>FOOTBALL CENTER</span>
@@ -208,29 +333,27 @@ export default function Matches() {
         </div>
 
         <div className="calendar">
-
           <button
             className="calendar-arrow"
             onClick={() => changeDay(-1)}
-            aria-label="Previous day"
           >
             ‹
           </button>
 
           <div className="days">
             {days.map((date) => {
-              const active =
-                dateKey(date) === selectedKey;
+              const key = dateKey(date);
+              const active = key === selectedKey;
 
               const count = matches.filter(
                 (match) =>
                   matchDateKey(match.match_date) ===
-                  dateKey(date)
+                  key
               ).length;
 
               return (
                 <button
-                  key={dateKey(date)}
+                  key={key}
                   className={
                     active
                       ? "calendar-day active"
@@ -240,21 +363,13 @@ export default function Matches() {
                     setSelectedDate(date)
                   }
                 >
-                  <span>
-                    {getDayName(date)}
-                  </span>
+                  <span>{getDayName(date)}</span>
 
-                  <b>
-                    {date.getDate()}
-                  </b>
+                  <b>{date.getDate()}</b>
 
-                  <small>
-                    {getMonth(date)}
-                  </small>
+                  <small>{getMonth(date)}</small>
 
-                  {count > 0 && (
-                    <i>{count}</i>
-                  )}
+                  {count > 0 && <i>{count}</i>}
                 </button>
               );
             })}
@@ -263,7 +378,6 @@ export default function Matches() {
           <button
             className="calendar-arrow"
             onClick={() => changeDay(1)}
-            aria-label="Next day"
           >
             ›
           </button>
@@ -276,30 +390,48 @@ export default function Matches() {
           </button>
         </div>
 
-        {loading && (
+        {error && matches.length > 0 && (
+          <div className="matches-refresh-message">
+            ⚠ {error}
+          </div>
+        )}
+
+        {loading && matches.length === 0 && (
           <div className="matches-state">
             <div className="loading-spinner" />
             <h3>Loading matches...</h3>
           </div>
         )}
 
-        {!loading && dayMatches.length === 0 && (
-          <div className="matches-state">
-            <span>⚽</span>
+        {!loading &&
+          matches.length === 0 && (
+            <div className="matches-state">
+              <span>⚽</span>
 
-            <h3>
-              No matches today
-            </h3>
+              <h3>No matches available</h3>
 
-            <p>
-              Try another date using the calendar.
-            </p>
-          </div>
-        )}
+              <p>
+                The football server is currently unavailable.
+              </p>
+            </div>
+          )}
 
-        {!loading && dayMatches.length > 0 && (
+        {dayMatches.length === 0 &&
+          matches.length > 0 &&
+          !loading && (
+            <div className="matches-state">
+              <span>⚽</span>
+
+              <h3>No matches on this date</h3>
+
+              <p>
+                Choose another date from the calendar.
+              </p>
+            </div>
+          )}
+
+        {dayMatches.length > 0 && (
           <div className="league-groups">
-
             {leagues.map((leagueId) => {
               const leagueMatches =
                 dayMatches.filter(
@@ -315,9 +447,7 @@ export default function Matches() {
                   className="league-group"
                   key={leagueId}
                 >
-
                   <div className="league-header">
-
                     <div className="league-logo">
                       {league.league_logo ? (
                         <img
@@ -333,9 +463,7 @@ export default function Matches() {
                     </div>
 
                     <div className="league-info">
-                      <small>
-                        COMPETITION
-                      </small>
+                      <small>COMPETITION</small>
 
                       <h3>
                         {league.league_name ||
@@ -354,11 +482,9 @@ export default function Matches() {
                         ? "ES"
                         : ""}
                     </strong>
-
                   </div>
 
                   <div className="matches-grid">
-
                     {leagueMatches.map((match) => {
                       const live = isLive(
                         match.status
@@ -381,7 +507,6 @@ export default function Matches() {
                               : "match-card"
                           }
                         >
-
                           <div className="match-top">
                             <span>
                               {getTime(
@@ -403,7 +528,6 @@ export default function Matches() {
                           </div>
 
                           <div className="match-teams">
-
                             <div className="team">
                               <div className="team-logo">
                                 {match.home_logo ? (
@@ -424,9 +548,7 @@ export default function Matches() {
                                 {match.home_team}
                               </strong>
 
-                              <small>
-                                HOME
-                              </small>
+                              <small>HOME</small>
                             </div>
 
                             <div className="match-center">
@@ -438,9 +560,7 @@ export default function Matches() {
                                     )}
                                   </strong>
 
-                                  <small>
-                                    VS
-                                  </small>
+                                  <small>VS</small>
                                 </>
                               ) : (
                                 <div className="score">
@@ -477,11 +597,8 @@ export default function Matches() {
                                 {match.away_team}
                               </strong>
 
-                              <small>
-                                AWAY
-                              </small>
+                              <small>AWAY</small>
                             </div>
-
                           </div>
 
                           <div className="match-bottom">
@@ -494,19 +611,15 @@ export default function Matches() {
                               #{match.id}
                             </span>
                           </div>
-
                         </article>
                       );
                     })}
-
                   </div>
                 </section>
               );
             })}
-
           </div>
         )}
-
       </section>
     </main>
   );
