@@ -1,252 +1,189 @@
-
 import { useEffect, useState } from "react";
-import {
-  getLiveMatches,
-  type ApiEvent,
-} from "../api/footballApi";
 import "./Live.css";
 
-type LiveProps = {
-  onDetails: (match: ApiEvent) => void;
+type Match = {
+  id: number;
+  home_team: string;
+  away_team: string;
+  home_logo: string | null;
+  away_logo: string | null;
+  match_date: string;
+  status: string;
+  score_home: number;
+  score_away: number;
+  league_name: string | null;
+  league_logo: string | null;
 };
 
-function Live({ onDetails }: LiveProps) {
-  const [matches, setMatches] = useState<ApiEvent[]>([]);
+export default function Live() {
+  const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  const loadLive = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const loadMatches = () => {
+    fetch("http://localhost:5000/api/matches")
+      .then((r) => r.json())
+      .then((data) => {
+        const live = Array.isArray(data)
+          ? data.filter((m: Match) => {
+              const s = m.status.toUpperCase();
+              return (
+                s.includes("LIVE") ||
+                s.includes("IN PROGRESS") ||
+                s.includes("HALFTIME") ||
+                s.includes("1H") ||
+                s.includes("2H")
+              );
+            })
+          : [];
 
-      const data = await getLiveMatches();
-      setMatches(data);
-    } catch (err) {
-      console.error("Live Error:", err);
-      setError("فشل تحميل المباريات المباشرة.");
-    } finally {
-      setLoading(false);
-    }
+        setMatches(live);
+      })
+      .catch(() => setMatches([]))
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
-    loadLive();
-
-    const interval = setInterval(loadLive, 30000);
-
-    return () => clearInterval(interval);
+    loadMatches();
+    const timer = setInterval(loadMatches, 30000);
+    return () => clearInterval(timer);
   }, []);
+
+  const getMinute = (status: string) => {
+    const found = status.match(/\d+/);
+    return found ? `${found[0]}'` : "LIVE";
+  };
 
   return (
     <main className="live-page">
       <section className="live-hero">
+        <div className="live-hero-overlay" />
+
         <div className="live-hero-content">
-          <span className="live-label">
-            <i></i>
-            LIVE CENTER
-          </span>
+          <div className="live-kicker">
+            <span />
+            GOALZONE • LIVE CENTER
+          </div>
 
           <h1>
-            LIVE
-            <strong>MATCHES</strong>
+            THE GAME
+            <br />
+            <b>IS ON.</b>
           </h1>
 
           <p>
-            تابع المباريات الجارية حاليًا لحظة بلحظة.
+            Follow every live match, score and moment in real time.
           </p>
 
           <div className="live-stats">
-            <div className="live-stat">
-              <span className="stat-icon live-icon">●</span>
-
-              <div>
-                <strong>LIVE</strong>
-                <small>NOW PLAYING</small>
-              </div>
+            <div>
+              <strong>{matches.length}</strong>
+              <span>LIVE MATCHES</span>
             </div>
 
-            <div className="live-stat">
-              <span className="stat-icon">↻</span>
-
-              <div>
-                <strong>30s</strong>
-                <small>AUTO UPDATE</small>
-              </div>
+            <div>
+              <strong>30s</strong>
+              <span>AUTO REFRESH</span>
             </div>
 
-            <div className="live-stat">
-              <span className="stat-icon">⚽</span>
-
-              <div>
-                <strong>24/7</strong>
-                <small>FOOTBALL CENTER</small>
-              </div>
+            <div>
+              <strong>24/7</strong>
+              <span>FOOTBALL</span>
             </div>
           </div>
         </div>
 
-        <div className="transfers-ball">⚽</div>
+        <div className="live-orb">
+          <span>LIVE</span>
+          <strong>●</strong>
+          <small>NOW</small>
+        </div>
       </section>
 
-      <section className="live-content">
+      <section className="live-section">
         <div className="live-heading">
           <div>
-            <span>LIVE FOOTBALL</span>
-
+            <span>REAL TIME SCORES</span>
             <h2>
-              المباريات <strong>المباشرة</strong>
+              Live <b>Now</b>
             </h2>
           </div>
 
-          <div className="live-count">
-            <i></i>
-            {matches.length} MATCHES
+          <div className="live-indicator">
+            <i />
+            {matches.length} LIVE
           </div>
         </div>
 
-        {loading && (
-          <div className="live-state">
-            <div className="live-loader"></div>
-
-            <h3>جاري تحميل المباريات</h3>
-
-            <p>
-              نبحث عن المباريات المباشرة الآن...
-            </p>
+        {loading ? (
+          <div className="live-empty">
+            <div className="spinner" />
+            <h3>Connecting to live center...</h3>
           </div>
-        )}
-
-        {!loading && error && (
-          <div className="live-state">
-            <div className="state-icon">⚠</div>
-
-            <h3>حدث خطأ</h3>
-
-            <p>{error}</p>
-
-            <button onClick={loadLive}>
-              إعادة المحاولة
-            </button>
+        ) : matches.length === 0 ? (
+          <div className="live-empty">
+            <div className="empty-ball">⚽</div>
+            <h3>No live matches</h3>
+            <p>There are no matches happening right now.</p>
           </div>
-        )}
-
-        {!loading && !error && matches.length === 0 && (
-          <div className="live-state">
-            <div className="state-icon">⚽</div>
-
-            <h3>لا توجد مباريات مباشرة الآن</h3>
-
-            <p>
-              سيتم تحديث المباريات تلقائيًا كل 30 ثانية.
-            </p>
-          </div>
-        )}
-
-        {!loading && !error && matches.length > 0 && (
+        ) : (
           <div className="live-grid">
-            {matches.map((match) => {
-              const competition = match.competitions?.[0];
-              const teams = competition?.competitors ?? [];
-
-              const home = teams.find(
-                (team) => team.homeAway === "home"
-              );
-
-              const away = teams.find(
-                (team) => team.homeAway === "away"
-              );
-
-              return (
-                <article
-                  className="live-card"
-                  key={match.id}
-                >
-                  <div className="live-card-top">
-                    <span className="live-now">
-                      <i></i>
-                      LIVE NOW
-                    </span>
-
-                    <small>
-                      {competition?.status?.type
-                        ?.shortDetail || "LIVE"}
-                    </small>
+            {matches.map((match) => (
+              <article className="live-card" key={match.id}>
+                <div className="card-top">
+                  <div className="competition">
+                    {match.league_logo && (
+                      <img src={match.league_logo} alt="" />
+                    )}
+                    <span>{match.league_name || "Football"}</span>
                   </div>
 
-                  <div className="live-teams">
-                    <div className="live-team">
-                      <div className="team-logo">
-                        {home?.team.logo ? (
-                          <img
-                            src={home.team.logo}
-                            alt={home.team.displayName}
-                          />
-                        ) : (
-                          "⚽"
-                        )}
-                      </div>
+                  <div className="live-pill">
+                    <i />
+                    {getMinute(match.status)}
+                  </div>
+                </div>
 
-                      <strong>
-                        {home?.team.displayName ||
-                          "Home Team"}
-                      </strong>
-
-                      <span>HOME</span>
+                <div className="score-area">
+                  <div className="club">
+                    <div className="club-logo">
+                      {match.home_logo ? (
+                        <img src={match.home_logo} alt={match.home_team} />
+                      ) : (
+                        "⚽"
+                      )}
                     </div>
-
-                    <div className="live-score">
-                      <b>{home?.score ?? "0"}</b>
-
-                      <em>:</em>
-
-                      <b>{away?.score ?? "0"}</b>
-
-                      <span>LIVE</span>
-                    </div>
-
-                    <div className="live-team">
-                      <div className="team-logo">
-                        {away?.team.logo ? (
-                          <img
-                            src={away.team.logo}
-                            alt={away.team.displayName}
-                          />
-                        ) : (
-                          "⚽"
-                        )}
-                      </div>
-
-                      <strong>
-                        {away?.team.displayName ||
-                          "Away Team"}
-                      </strong>
-
-                      <span>AWAY</span>
-                    </div>
+                    <strong>{match.home_team}</strong>
+                    <small>HOME</small>
                   </div>
 
-                  <div className="live-card-footer">
-                    {match.name ||
-                      "Live Football Match"}
+                  <div className="score">
+                    <strong>{match.score_home}</strong>
+                    <span>:</span>
+                    <strong>{match.score_away}</strong>
                   </div>
 
-                  <button
-                    type="button"
-                    className="live-details-btn"
-                    onClick={() => onDetails(match)}
-                  >
-                    <span>تفاصيل المباراة</span>
-                    <b>→</b>
-                  </button>
-                </article>
-              );
-            })}
+                  <div className="club">
+                    <div className="club-logo">
+                      {match.away_logo ? (
+                        <img src={match.away_logo} alt={match.away_team} />
+                      ) : (
+                        "⚽"
+                      )}
+                    </div>
+                    <strong>{match.away_team}</strong>
+                    <small>AWAY</small>
+                  </div>
+                </div>
+
+                <div className="card-bottom">
+                  <span>● LIVE MATCH</span>
+                  <span>GOALZONE</span>
+                </div>
+              </article>
+            ))}
           </div>
         )}
       </section>
     </main>
   );
 }
-
-export default Live;

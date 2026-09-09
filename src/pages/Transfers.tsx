@@ -1,195 +1,280 @@
-
-import { useEffect, useMemo, useState } from "react";
-import { getTransfers, type Transfer } from "../api/newApi";
+import { useEffect, useState } from "react";
 import "./Transfers.css";
 
-function Transfers() {
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
+type Transfer = {
+id: number;
+player_name: string;
+player_photo?: string;
+from_team?: string;
+from_logo?: string;
+to_team?: string;
+to_logo?: string;
+transfer_fee?: string;
+position?: string;
+transfer_date?: string;
+league_name?: string;
+};
 
-  const loadTransfers = async () => {
-    try {
-      setLoading(true);
-      setError("");
-      setTransfers(await getTransfers());
-    } catch {
-      setError("تعذر تحميل الانتقالات");
-    } finally {
-      setLoading(false);
-    }
-  };
+const DEMO_TRANSFERS: Transfer[] = [
+{
+id: 1,
+player_name: "Marcus Vale",
+player_photo: "https://i.pravatar.cc/500?img=12",
+from_team: "Arsenal",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
+to_team: "Barcelona",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
+transfer_fee: "€85M",
+position: "Winger",
+transfer_date: "2026-07-12",
+league_name: "Premier League",
+},
+{
+id: 2,
+player_name: "Daniel Cruz",
+player_photo: "https://i.pravatar.cc/500?img=13",
+from_team: "Chelsea",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+to_team: "Real Madrid",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
+transfer_fee: "€110M",
+position: "Forward",
+transfer_date: "2026-07-18",
+league_name: "Premier League",
+},
+{
+id: 3,
+player_name: "Leo Martins",
+player_photo: "https://i.pravatar.cc/500?img=14",
+from_team: "Inter",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
+to_team: "Manchester City",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/382.png",
+transfer_fee: "€72M",
+position: "Midfielder",
+transfer_date: "2026-07-21",
+league_name: "Serie A",
+},
+{
+id: 4,
+player_name: "Noah Silva",
+player_photo: "https://i.pravatar.cc/500?img=15",
+from_team: "Benfica",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/1929.png",
+to_team: "Liverpool",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/364.png",
+transfer_fee: "€64M",
+position: "Defender",
+transfer_date: "2026-07-25",
+league_name: "Primeira Liga",
+},
+{
+id: 5,
+player_name: "Adam Rossi",
+player_photo: "https://i.pravatar.cc/500?img=16",
+from_team: "AC Milan",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/103.png",
+to_team: "Bayern Munich",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
+transfer_fee: "€58M",
+position: "Midfielder",
+transfer_date: "2026-07-29",
+league_name: "Serie A",
+},
+{
+id: 6,
+player_name: "Lucas Stone",
+player_photo: "https://i.pravatar.cc/500?img=17",
+from_team: "PSG",
+from_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/160.png",
+to_team: "Manchester United",
+to_logo:
+"https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
+transfer_fee: "€91M",
+position: "Forward",
+transfer_date: "2026-08-02",
+league_name: "Ligue 1",
+},
+];
 
-  useEffect(() => {
-    loadTransfers();
-  }, []);
+export default function Transfers() {
+const [transfers, setTransfers] = useState<Transfer[]>([]);
+const [loading, setLoading] = useState(true);
 
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase().trim();
+useEffect(() => {
+fetch("http://localhost:5000/api/transfers")
+.then((res) => {
+if (!res.ok) throw new Error("API error");
+return res.json();
+})
+.then((data) => {
+setTransfers(
+Array.isArray(data) && data.length
+? data
+: DEMO_TRANSFERS
+);
+})
+.catch(() => {
+setTransfers(DEMO_TRANSFERS);
+})
+.finally(() => setLoading(false));
+}, []);
 
-    return transfers.filter((t) => {
-      const text = `${t.player} ${t.from} ${t.to}`.toLowerCase();
-      const matchesSearch = !q || text.includes(q);
+return ( <main className="transfers-page">
 
-      if (filter === "incoming")
-        return matchesSearch && t.to !== "Unknown";
+```
+  <section className="transfers-hero">
+    <div className="transfers-overlay" />
 
-      if (filter === "outgoing")
-        return matchesSearch && t.from !== "Unknown";
+    <div className="transfers-hero-content">
+      <span>GOALZONE TRANSFER CENTER</span>
 
-      return matchesSearch;
-    });
-  }, [transfers, search, filter]);
+      <h1>
+        FOOTBALL <b>TRANSFERS</b>
+      </h1>
 
-  return (
-    <main className="transfers-page">
+      <p>
+        Latest moves, new clubs and transfer news.
+      </p>
+    </div>
+  </section>
 
-      {/* HERO */}
-      <section className="transfers-hero">
-        <div className="transfers-hero-bg" />
+  <section className="transfers-section">
 
-        <div className="transfers-hero-content">
-          <span className="transfers-label">
-            GOALZONE TRANSFER CENTER
-          </span>
+    <div className="section-heading">
+      <span>TRANSFER CENTER</span>
 
-          <h1>
-            TRANSFER
-            <strong>WINDOW</strong>
-          </h1>
+      <h2>
+        Latest <b>Transfers</b>
+      </h2>
+    </div>
 
-          <p>
-            أحدث أخبار وانتقالات اللاعبين من عالم كرة القدم.
-          </p>
+    {loading ? (
+      <div className="transfer-state">
+        <div className="spinner" />
+        Loading transfers...
+      </div>
+    ) : (
+      <div className="transfers-grid">
 
-          <div className="transfers-hero-stats">
-            <div>
-              <b>LIVE</b>
-              <span>UPDATES</span>
+        {transfers.map((transfer) => (
+          <article
+            className="transfer-card"
+            key={transfer.id}
+          >
+
+            <div className="transfer-top">
+              <span>
+                {transfer.league_name || "FOOTBALL"}
+              </span>
+
+              <b>DEMO</b>
             </div>
-            <div>
-              <b>WORLD</b>
-              <span>TRANSFERS</span>
+
+            <div className="player">
+
+              <div className="player-photo">
+                {transfer.player_photo ? (
+                  <img
+                    src={transfer.player_photo}
+                    alt={transfer.player_name}
+                  />
+                ) : (
+                  <span>⚽</span>
+                )}
+              </div>
+
+              <h3>{transfer.player_name}</h3>
+
+              <small>
+                {transfer.position || "Player"}
+              </small>
+
             </div>
-            <div>
-              <b>24/7</b>
-              <span>FOOTBALL</span>
-            </div>
-          </div>
-        </div>
 
-        <div className="transfers-ball">⚽</div>
-      </section>
+            <div className="clubs">
 
-      {/* CONTENT */}
-      <section className="transfers-content">
+              <div className="club">
 
-        <div className="transfers-heading">
-          <div>
-            <span>LATEST MOVES</span>
-            <h2>آخر الانتقالات</h2>
-          </div>
-
-          <strong>{filtered.length} انتقال</strong>
-        </div>
-
-        <div className="transfers-tools">
-          <input
-            type="text"
-            placeholder="ابحث عن لاعب أو نادي..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-
-          <div className="transfer-filters">
-            <button
-              className={filter === "all" ? "active" : ""}
-              onClick={() => setFilter("all")}
-            >
-              الكل
-            </button>
-
-            <button
-              className={filter === "incoming" ? "active" : ""}
-              onClick={() => setFilter("incoming")}
-            >
-              انتقالات
-            </button>
-
-            <button
-              className={filter === "outgoing" ? "active" : ""}
-              onClick={() => setFilter("outgoing")}
-            >
-              مغادرة
-            </button>
-          </div>
-        </div>
-
-        {loading && (
-          <div className="transfers-state">
-            <div className="transfer-loader" />
-            <p>جاري تحميل الانتقالات...</p>
-          </div>
-        )}
-
-        {!loading && error && (
-          <div className="transfers-state">
-            <div className="empty-transfer">!</div>
-            <h3>{error}</h3>
-            <button onClick={loadTransfers}>
-              إعادة المحاولة
-            </button>
-          </div>
-        )}
-
-        {!loading && !error && filtered.length === 0 && (
-          <div className="transfers-state">
-            <div className="empty-transfer">↔</div>
-            <h3>لا توجد انتقالات</h3>
-            <p>جرب البحث باسم لاعب أو نادي آخر.</p>
-          </div>
-        )}
-
-        {!loading && !error && filtered.length > 0 && (
-          <div className="transfers-grid">
-            {filtered.map((transfer) => (
-              <article className="transfer-card" key={transfer.id}>
-
-                <div className="transfer-card-top">
-                  <span>TRANSFER</span>
-                  <small>{transfer.date}</small>
+                <div className="club-logo">
+                  {transfer.from_logo ? (
+                    <img
+                      src={transfer.from_logo}
+                      alt={transfer.from_team}
+                    />
+                  ) : (
+                    "⚽"
+                  )}
                 </div>
 
-                <h3>{transfer.player}</h3>
+                <strong>
+                  {transfer.from_team || "Unknown"}
+                </strong>
 
-                <div className="transfer-route">
-                  <div className="club">
-                    <small>FROM</small>
-                    <b>{transfer.from || "Unknown"}</b>
-                  </div>
+              </div>
 
-                  <div className="transfer-arrow">→</div>
+              <div className="transfer-arrow">
+                →
+              </div>
 
-                  <div className="club">
-                    <small>TO</small>
-                    <b>{transfer.to || "Unknown"}</b>
-                  </div>
+              <div className="club">
+
+                <div className="club-logo">
+                  {transfer.to_logo ? (
+                    <img
+                      src={transfer.to_logo}
+                      alt={transfer.to_team}
+                    />
+                  ) : (
+                    "⚽"
+                  )}
                 </div>
 
-                <div className="transfer-line" />
-                <span className="transfer-type">
-                  OFFICIAL TRANSFER
-                </span>
+                <strong>
+                  {transfer.to_team || "Unknown"}
+                </strong>
 
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
-  );
+              </div>
+
+            </div>
+
+            <div className="transfer-bottom">
+
+              <span>
+                {transfer.transfer_date
+                  ? new Date(
+                      transfer.transfer_date
+                    ).toLocaleDateString()
+                  : "Recently"}
+              </span>
+
+              <strong>
+                {transfer.transfer_fee ||
+                  "Undisclosed"}
+              </strong>
+
+            </div>
+
+          </article>
+        ))}
+
+      </div>
+    )}
+
+  </section>
+</main>
+
+
+);
 }
-
-export default Transfers;

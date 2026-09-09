@@ -1,80 +1,73 @@
-import { NavLink } from "react-router-dom";
-import Logo from "../Logo";
+import { useState } from "react";
+import { NavLink, Link } from "react-router-dom";
 import "./Navbar.css";
 
 export default function Navbar() {
-  const navClass = ({ isActive }: { isActive: boolean }) =>
-    `nav-link ${isActive ? "active" : ""}`;
+  const [open, setOpen] = useState(false);
+
+  const closeMenu = () => setOpen(false);
 
   return (
     <header className="navbar">
-      <div className="navbar-inner">
+      <div className="nav-inner">
+        <Link to="/" className="brand" onClick={closeMenu}>
+          <span className="brand-ball">⚽</span>
+          <span>
+            <strong>GOAL</strong>
+            <b>ZONE</b>
+          </span>
+        </Link>
 
-        <NavLink to="/" className="navbar-logo">
-          <Logo />
-        </NavLink>
-
-        <nav className="navbar-links">
-
-          <NavLink to="/" className={navClass}>
+        <nav className={open ? "nav-links open" : "nav-links"}>
+          <NavLink to="/" end onClick={closeMenu}>
             Home
           </NavLink>
 
-          <NavLink to="/matches" className={navClass}>
+          <NavLink to="/matches" onClick={closeMenu}>
             Matches
           </NavLink>
 
-          <NavLink
-            to="/live"
-            className={({ isActive }) =>
-              `nav-link live-link ${isActive ? "active" : ""}`
-            }
-          >
-            <span className="live-dot" />
+          <NavLink to="/live" className="live-link" onClick={closeMenu}>
+            <i />
             Live
           </NavLink>
 
-          <NavLink to="/transfers" className={navClass}>
+          <NavLink to="/transfers" onClick={closeMenu}>
             Transfers
           </NavLink>
 
-          <NavLink to="/news" className={navClass}>
+          <NavLink to="/news" onClick={closeMenu}>
             News
           </NavLink>
 
-        </nav>
-
-        <div className="navbar-actions">
-
-          <button
-            type="button"
-            className="notification-btn"
-            aria-label="Notifications"
-          >
-            🔔
-            <span className="notification-badge">3</span>
-          </button>
-
-          <NavLink
-            to="/favorites"
-            className={({ isActive }) =>
-              `favorites-btn ${isActive ? "active" : ""}`
-            }
-            aria-label="Favorites"
-          >
-            ♡
+          <NavLink to="/leagues" onClick={closeMenu}>
+            Leagues
           </NavLink>
 
-          <div className="stadium-status">
-            <span className="status-light" />
-            <span>ONLINE</span>
-          </div>
+          <NavLink to="/favorites" onClick={closeMenu}>
+            Favorites
+          </NavLink>
+        </nav>
 
+        <div className="nav-actions">
+          <Link to="/live" className="live-button">
+            <span />
+            LIVE
+          </Link>
+
+          <button
+            className="menu-button"
+            type="button"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle navigation"
+            aria-expanded={open}
+          >
+            <span />
+            <span />
+            <span />
+          </button>
         </div>
-
       </div>
-
-      <div className="navbar-line" />
     </header>
   );
 }

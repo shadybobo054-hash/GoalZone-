@@ -1,0 +1,153 @@
+.gz-logo {
+  width: min(760px, 96vw);
+  margin: auto;
+  position: relative;
+  animation: gzFloat 5s ease-in-out infinite;
+}
+
+.gz-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  overflow: visible;
+}
+
+/* SCREEN */
+.gz-screen {
+  animation: gzScreen 4s ease-in-out infinite;
+}
+
+/* SPEED */
+.gz-speed path {
+  stroke-dasharray: 170 70;
+  animation: gzSpeed 2s linear infinite;
+}
+
+/* LIGHTS */
+.gz-lights circle {
+  animation: gzLight 1.6s ease-in-out infinite;
+}
+
+.gz-lights circle:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.gz-lights circle:nth-child(3) {
+  animation-delay: 0.2s;
+}
+.gz-lights circle:nth-child(4) {
+  animation-delay: 0.3s;
+}
+.gz-lights circle:nth-child(5) {
+  animation-delay: 0.4s;
+}
+.gz-lights circle:nth-child(6) {
+  animation-delay: 0.5s;
+}
+.gz-lights circle:nth-child(7) {
+  animation-delay: 0.6s;
+}
+.gz-lights circle:nth-child(8) {
+  animation-delay: 0.7s;
+}
+.gz-lights circle:nth-child(9) {
+  animation-delay: 0.8s;
+}
+.gz-lights circle:nth-child(10) {
+  animation-delay: 0.9s;
+}
+
+/* BRAND */
+.gz-brand {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 68px;
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -5px;
+  fill: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.gz-goal {
+  fill: #fff !important;
+  opacity: 1 !important;
+}
+
+.gz-zone {
+  fill: #fff !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: drop-shadow(0 0 8px #000);
+}
+
+.gz-media {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 8px;
+  fill: #8a938d;
+}
+
+/* ANIMATIONS */
+@keyframes gzFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes gzScreen {
+  0%,
+  100% {
+    opacity: 0.92;
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 16px #22c55e55);
+  }
+}
+
+@keyframes gzSpeed {
+  from {
+    stroke-dashoffset: 240;
+  }
+  to {
+    stroke-dashoffset: -240;
+  }
+}
+
+@keyframes gzLight {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.85);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+    transform-box: fill-box;
+    transform-origin: center;
+  }
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .gz-logo {
+    width: 98vw;
+  }
+
+  .gz-brand {
+    font-size: 56px;
+    letter-spacing: -4px;
+  }
+
+  .gz-media {
+    font-size: 10px;
+    letter-spacing: 5px;
+  }
+}

@@ -1,575 +1,296 @@
-const BASE_URL="https://site.api.espn.com/apis/site/v2/sports/soccer";
 
-export type ApiTeam={
-  id?:string;
-  displayName:string;
-  shortDisplayName?:string;
-  abbreviation?:string;
-  logo?:string;
+export type Team = {
+  id?: string | number;
+  name?: string;
+  displayName?: string;
+  shortDisplayName?: string;
+  logo?: string;
 };
 
-export type ApiCompetitor={
-  id?:string;
-  homeAway:"home"|"away";
-  score?:string;
-  team:ApiTeam;
+export type Competitor = {
+  homeAway?: "home" | "away";
+  team?: Team;
+  score?: string;
 };
 
-export type ApiCompetition={
-  id?:string;
-  date?:string;
-  competitors:ApiCompetitor[];
-  status?:{
-    type?:{
-      id?:string;
-      name?:string;
-      state?:string;
-      completed?:boolean;
-      description?:string;
-      detail?:string;
-      shortDetail?:string;
-    }
-  };
-  venue?:{fullName?:string};
-};
-
-export type ApiLeague={
-  id?:string;
-  name?:string;
-  abbreviation?:string;
-  logo?:string;
-};
-
-export type ApiEvent={
-  id:string;
-  name:string;
-  date:string;
-  competitions?:ApiCompetition[];
-  league?:ApiLeague;
-  season?:{name?:string;year?:number};
-};
-
-export type MatchPlay={
-  id?:string;
-  text?:string;
-  shortText?:string;
-  type?:{text?:string;abbreviation?:string};
-  clock?:{displayValue?:string};
-  period?:{number?:number};
-  homeScore?:string;
-  awayScore?:string;
-  scoringPlay?:boolean;
-  team?:{id?:string;displayName?:string;logo?:string};
-};
-
-export type MatchStatistic={
-  name?:string;
-  displayName?:string;
-  home?:string;
-  away?:string;
-};
-
-export type MatchLeader={
-  name?:string;
-  displayName?:string;
-  shortDisplayName?:string;
-  value?:string|number;
-  athlete?:{
-    displayName?:string;
-    shortName?:string;
-    headshot?:{href?:string};
+export type CompetitionStatus = {
+  type?: {
+    state?: string;
+    detail?: string;
+    description?: string;
   };
 };
 
-export type MatchDetails={
-  event:ApiEvent;
-  plays:MatchPlay[];
-  statistics:MatchStatistic[];
-  leaders:MatchLeader[];
-  venue?:string;
-  attendance?:number;
-};
+export type ApiEvent = {
+  id: string | number;
+  name?: string;
+  date?: string;
+  status?: string;
 
-export const LEAGUES={
-  premierLeague:"eng.1",
-  laLiga:"esp.1",
-  serieA:"ita.1",
-  bundesliga:"ger.1",
-  ligue1:"fra.1",
-  eredivisie:"ned.1",
-  primeiraLiga:"por.1",
-  superLig:"tur.1",
-  championsLeague:"uefa.champions",
-  europaLeague:"uefa.europa",
-  egyptianLeague:"egy.1",
-  saudiLeague:"ksa.1",
-  mls:"usa.1"
-} as const;
-
-export const ALL_LEAGUES=[
-  ["eng.1","الدوري الإنجليزي الممتاز"],
-  ["esp.1","الدوري الإسباني"],
-  ["ita.1","الدوري الإيطالي"],
-  ["ger.1","الدوري الألماني"],
-  ["fra.1","الدوري الفرنسي"],
-  ["ned.1","الدوري الهولندي"],
-  ["por.1","الدوري البرتغالي"],
-  ["tur.1","الدوري التركي"],
-  ["uefa.champions","دوري أبطال أوروبا"],
-  ["uefa.europa","الدوري الأوروبي"],
-  ["usa.1","الدوري الأمريكي"],
-  ["ksa.1","الدوري السعودي"],
-  ["egy.1","الدوري المصري"]
-].map(([id,name])=>({id,name}));
-
-const dateKey=(date=new Date())=>{
-  const y=date.getFullYear();
-  const m=String(date.getMonth()+1).padStart(2,"0");
-  const d=String(date.getDate()).padStart(2,"0");
-  return`${y}${m}${d}`;
-};
-
-const offsetDate=(n:number)=>{
-  const d=new Date();
-  d.setDate(d.getDate()+n);
-  return dateKey(d);
-};
-
-const leagueName=(id:string)=>
-  ALL_LEAGUES.find(x=>x.id===id)?.name||"Football";
-
-const statusState=(status:any)=>{
-  const type=status?.type;
-
-  if(type?.state)return type.state;
-
-  const name=String(type?.name||"").toLowerCase();
-
-  if(name.includes("live")||name.includes("progress"))
-    return"in";
-
-  if(type?.completed||name.includes("final"))
-    return"post";
-
-  return"pre";
-};
-
-/* =========================
-   TEAM LOGO
-========================= */
-
-const getTeamLogo=(team:any)=>{
-  return(
-    team?.logo||
-    team?.logos?.[0]?.href||
-    team?.logos?.[0]?.url||
-    team?.team?.logo||
-    team?.team?.logos?.[0]?.href||
-    team?.team?.logos?.[0]?.url||
-    ""
-  );
-};
-
-const makeTeam=(x:any,side:string):ApiTeam=>({
-  id:x?.team?.id
-    ?String(x.team.id)
-    :x?.id
-    ?String(x.id)
-    :undefined,
-
-  displayName:
-    x?.team?.displayName||
-    x?.team?.name||
-    x?.displayName||
-    x?.name||
-    side,
-
-  shortDisplayName:
-    x?.team?.shortDisplayName||
-    x?.team?.displayName||
-    x?.displayName||
-    side,
-
-  abbreviation:
-    x?.team?.abbreviation||
-    x?.abbreviation||
-    side.toUpperCase(),
-
-  logo:getTeamLogo(x)
-});
-
-const normalize=(event:any,leagueId:string):ApiEvent=>{
-  const comp=event?.competitions?.[0];
-
-  const teams=comp?.competitors||[];
-
-  const home=teams.find((x:any)=>x.homeAway==="home");
-  const away=teams.find((x:any)=>x.homeAway==="away");
-
-  const date=
-    event?.date||
-    comp?.date||
-    new Date().toISOString();
-
-  const state=statusState(comp?.status);
-
-  const h=makeTeam(home,"Home");
-  const a=makeTeam(away,"Away");
-
-  return{
-    id:String(event?.id||""),
-    name:
-      event?.name||
-      `${h.displayName} vs ${a.displayName}`,
-    date,
-
-    competitions:[{
-      id:String(comp?.id||event?.id||""),
-      date,
-
-      competitors:[
-        {
-          id:home?.id
-            ?String(home.id)
-            :h.id,
-
-          homeAway:"home",
-
-          score:
-            home?.score!=null
-              ?String(home.score)
-              :undefined,
-
-          team:h
-        },
-
-        {
-          id:away?.id
-            ?String(away.id)
-            :a.id,
-
-          homeAway:"away",
-
-          score:
-            away?.score!=null
-              ?String(away.score)
-              :undefined,
-
-          team:a
-        }
-      ],
-
-      status:{
-        type:{
-          id:comp?.status?.type?.id||"",
-          name:comp?.status?.type?.name||"",
-          state,
-          completed:Boolean(
-            comp?.status?.type?.completed
-          ),
-          description:
-            comp?.status?.type?.description||"",
-          detail:
-            comp?.status?.type?.detail||"",
-          shortDetail:
-            comp?.status?.type?.shortDetail||""
-        }
-      },
-
-      venue:{
-        fullName:
-          comp?.venue?.fullName||""
-      }
-    }],
-
-    league:{
-      id:leagueId,
-      name:
-        event?.league?.name||
-        leagueName(leagueId),
-      abbreviation:leagueId,
-      logo:
-        event?.league?.logo||
-        event?.league?.logos?.[0]?.href||
-        ""
-    },
-
-    season:{
-      name:
-        event?.season?.displayName||
-        event?.season?.name||
-        "",
-
-      year:
-        event?.season?.year||
-        new Date(date).getFullYear()
-    }
+  league?: {
+    id?: string;
+    name?: string;
   };
+
+  competitions?: {
+    competitors?: Competitor[];
+    status?: CompetitionStatus;
+  }[];
+
+  home_team?: string;
+  away_team?: string;
+  home_logo?: string;
+  away_logo?: string;
+  match_date?: string;
+  score_home?: number;
+  score_away?: number;
 };
 
-async function request(
-  league:string,
-  date?:string
-){
-  const res=await fetch(
-    `${BASE_URL}/${league}/scoreboard?dates=${date||dateKey()}&limit=100`
-  );
+export type MatchDetails = ApiEvent;
 
-  if(!res.ok)
-    throw new Error(`ESPN API Error: ${res.status}`);
+export type League = {
+  id: string;
+  name: string;
+  country?: string;
+  logo?: string;
+};
 
-  return res.json();
+export const LEAGUES = {
+  premierLeague: "eng.1",
+  laLiga: "esp.1",
+  bundesliga: "ger.1",
+  serieA: "ita.1",
+  ligue1: "fra.1",
+  championsLeague: "uefa.champions",
+};
+
+const ESPN_URL =
+  "https://site.api.espn.com/apis/site/v2/sports/soccer";
+
+const BASE_URL =
+  "http://127.0.0.1:5000/api";
+
+/* ================= SAFE FETCH ================= */
+
+async function fetchJSON(
+  url: string,
+  options?: RequestInit
+) {
+  const response = await fetch(url, {
+    ...options,
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Server Error ${response.status}`
+    );
+  }
+
+  const text = await response.text();
+
+  if (!text) {
+    throw new Error("Empty server response");
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error(
+      "Server returned invalid JSON"
+    );
+  }
 }
+
+/* ================= ESPN MATCHES ================= */
 
 export async function getMatches(
-  league:string,
-  date?:string
-):Promise<ApiEvent[]>{
-  const data=await request(league,date);
-
-  return(data.events||[])
-    .map((e:any)=>normalize(e,league));
-}
-
-export async function getAllMatches(
-  date?:string
-):Promise<ApiEvent[]>{
-  const results=await Promise.all(
-    ALL_LEAGUES.map(async l=>{
-      try{
-        return await getMatches(l.id,date);
-      }catch(e){
-        console.error(
-          `Failed to load ${l.name}`,
-          e
-        );
-        return[];
-      }
-    })
+  league: string = LEAGUES.premierLeague
+): Promise<ApiEvent[]> {
+  const data = await fetchJSON(
+    `${ESPN_URL}/${league}/scoreboard`
   );
 
-  return results
-    .flat()
-    .sort(
-      (a,b)=>
-        new Date(a.date).getTime()-
-        new Date(b.date).getTime()
-    );
+  if (!Array.isArray(data?.events)) {
+    return [];
+  }
+
+  return data.events;
 }
 
-export const getTodayMatches=()=>
-  getAllMatches(dateKey());
-
-export const getYesterdayMatches=()=>
-  getAllMatches(offsetDate(-1));
-
-export const getTomorrowMatches=()=>
-  getAllMatches(offsetDate(1));
-
-export const getMatchesByDate=(date:Date)=>
-  getAllMatches(dateKey(date));
-
-export async function getLiveMatches(){
-  const matches=await getTodayMatches();
-  return matches.filter(isMatchLive);
-}
-
-export function getMatchStatus(match:ApiEvent){
-  const s=
-    match.competitions?.[0]?.status?.type;
-
-  if(!s)return"لم تبدأ";
-
-  if(s.completed||s.state==="post")
-    return"انتهت";
-
-  if(s.state==="in")
-    return s.detail||s.description||"مباشر";
-
-  return"لم تبدأ";
-}
-
-export function isMatchLive(match:ApiEvent){
-  return match.competitions?.[0]
-    ?.status?.type?.state==="in";
-}
-
-export function getMatchTeams(match:ApiEvent){
-  const teams=
-    match.competitions?.[0]?.competitors||[];
-
-  return{
-    home:teams.find(
-      x=>x.homeAway==="home"
-    ),
-    away:teams.find(
-      x=>x.homeAway==="away"
-    )
-  };
-}
-
-export function getMatchScore(match:ApiEvent){
-  const{home,away}=getMatchTeams(match);
-
-  return{
-    home:home?.score||"0",
-    away:away?.score||"0"
-  };
-}
+/* ================= MATCH DETAILS ================= */
 
 export async function getMatchDetails(
-  league:string,
-  matchId:string
-):Promise<MatchDetails|null>{
-  try{
-    const res=await fetch(
-      `${BASE_URL}/${league}/summary?event=${matchId}`
+  league: string,
+  eventId: string
+): Promise<MatchDetails | null> {
+  try {
+    const events = await getMatches(league);
+    return (
+      events.find(
+        (e) => String(e.id) === String(eventId)
+      ) ?? null
     );
-
-    if(!res.ok)
-      throw new Error(
-        `ESPN Details Error: ${res.status}`
-      );
-
-    const data=await res.json();
-
-    const header=data.header||data;
-
-    const event=normalize(
-      header,
-      league
-    );
-
-    const competition=
-      header?.competitions?.[0];
-
-    return{
-      event,
-      plays:Array.isArray(data.plays)
-        ?data.plays
-        :[],
-
-      statistics:
-        extractStatistics(data),
-
-      leaders:
-        extractLeaders(data),
-
-      venue:
-        competition?.venue?.fullName||"",
-
-      attendance:
-        competition?.attendance
-    };
-
-  }catch(e){
-    console.error(
-      "Failed to load match details:",
-      e
-    );
-
+  } catch {
     return null;
   }
 }
 
-function extractStatistics(
-  data:any
-):MatchStatistic[]{
+/* ================= FEATURED ================= */
 
-  const result:MatchStatistic[]=[];
+export async function getFeaturedMatches(): Promise<
+  ApiEvent[]
+> {
+  const leagues = [
+    LEAGUES.premierLeague,
+    LEAGUES.laLiga,
+    LEAGUES.bundesliga,
+    LEAGUES.serieA,
+    LEAGUES.ligue1,
+  ];
 
-  const teams=
-    data?.boxscore?.teams||[];
-
-  if(teams.length<2)return result;
-
-  const homeStats=
-    teams.find(
-      (x:any)=>x.homeAway==="home"
-    )?.statistics||[];
-
-  const awayStats=
-    teams.find(
-      (x:any)=>x.homeAway==="away"
-    )?.statistics||[];
-
-  homeStats.forEach((h:any)=>{
-    const a=awayStats.find(
-      (x:any)=>
-        x.name===h.name||
-        x.displayName===h.displayName
-    );
-
-    result.push({
-      name:h.name,
-      displayName:h.displayName,
-
-      home:String(
-        h.displayValue??
-        h.value??
-        "-"
-      ),
-
-      away:String(
-        a?.displayValue??
-        a?.value??
-        "-"
-      )
-    });
-  });
-
-  return result;
-}
-
-function extractLeaders(
-  data:any
-):MatchLeader[]{
-
-  const result:MatchLeader[]=[];
-
-  const leaders=
-    data?.leaders||[];
-
-  leaders.forEach((group:any)=>{
-    const entries=
-      group?.leaders||[];
-
-    entries.slice(0,3).forEach(
-      (item:any)=>{
-        result.push({
-          name:group.name,
-          displayName:group.displayName,
-          value:item.value,
-          athlete:item.athlete
-        });
-      }
-    );
-  });
-
-  return result;
-}
-
-export const getMatchScoreDetails=(
-  matchId:string,
-  league:string
-)=>
-  getMatchDetails(
-    league,
-    matchId
+  const results = await Promise.allSettled(
+    leagues.map((league) =>
+      getMatches(league)
+    )
   );
 
-export type NewsArticle={
-  id:string;
-  headline:string;
-  description?:string;
-  published?:string;
-  image?:string;
-  link?:string;
-  source?:string;
-  category?:string;
+  const allMatches: ApiEvent[] = [];
+
+  for (const result of results) {
+    if (
+      result.status === "fulfilled" &&
+      Array.isArray(result.value)
+    ) {
+      allMatches.push(...result.value);
+    }
+  }
+
+  return allMatches
+    .filter((match) => match.date)
+    .sort(
+      (a, b) =>
+        new Date(
+          a.date || ""
+        ).getTime() -
+        new Date(
+          b.date || ""
+        ).getTime()
+    )
+    .slice(0, 6);
+}
+
+/* ================= BACKEND MATCHES ================= */
+
+export type BackendMatch = {
+  id: number;
+  source_id?: string | null;
+
+  home_team: string;
+  away_team: string;
+
+  home_logo: string | null;
+  away_logo: string | null;
+
+  match_date: string;
+  status: string;
+
+  score_home: number;
+  score_away: number;
+
+  league_id: string | null;
+  league_name: string | null;
+
+  country: string | null;
+  league_logo: string | null;
 };
 
-export async function getNews():
-  Promise<NewsArticle[]>{
-  return[];
+type MatchesResponse = {
+  success?: boolean;
+  matches?: BackendMatch[];
+};
+
+/*
+ * ده المصدر المستخدم في Matches.tsx.
+ *
+ * مهم:
+ * الدالة دي لا ترجع [] عند خطأ السيرفر.
+ * بترمي Error عشان الصفحة تحتفظ بالبيانات
+ * الموجودة بدل ما تمسحها.
+ */
+export async function getBackendMatches(): Promise<
+  BackendMatch[]
+> {
+  const data: BackendMatch[] | MatchesResponse =
+    await fetchJSON(
+      `${BASE_URL}/matches`
+    );
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (Array.isArray(data.matches)) {
+    return data.matches;
+  }
+
+  throw new Error(
+    "Invalid matches response"
+  );
 }
+
+/* ================= LEAGUES ================= */
+
+export async function getLeagues(): Promise<
+  League[]
+> {
+  return [
+    {
+      id: "eng.1",
+      name: "Premier League",
+      country: "England",
+    },
+    {
+      id: "esp.1",
+      name: "La Liga",
+      country: "Spain",
+    },
+    {
+      id: "ger.1",
+      name: "Bundesliga",
+      country: "Germany",
+    },
+    {
+      id: "ita.1",
+      name: "Serie A",
+      country: "Italy",
+    },
+    {
+      id: "fra.1",
+      name: "Ligue 1",
+      country: "France",
+    },
+    {
+      id: "uefa.champions",
+      name: "Champions League",
+      country: "Europe",
+    },
+  ];
+}
+
+/* ================= NEWS ================= */
+
+export async function getNews() {
+  return fetchJSON(
+    `${BASE_URL}/news`
+  );
+}
+
+/* ================= TRANSFERS ================= */
+
+export async function getTransfers() {
+  return fetchJSON(
+    `${BASE_URL}/transfers`
+  );
+}
+
