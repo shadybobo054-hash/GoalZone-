@@ -16,6 +16,7 @@
     "react-router-dom": "latest"
   },
   "devDependencies": {
+    "@types/node": "^22.20.2",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@vitejs/plugin-react": "latest",
