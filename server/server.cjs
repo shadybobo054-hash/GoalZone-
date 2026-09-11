@@ -1,7 +1,7 @@
 const path = require("path");
 
 require("dotenv").config({
-  path: path.join(__dirname, "..", ".env"),
+  path: path.join(__dirname, "..", ".env")
 });
 
 const express = require("express");
@@ -11,35 +11,40 @@ const axios = require("axios");
 const OpenAI = require("openai");
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 
 app.use(cors());
 app.use(express.json());
 
-/* ================= OPENAI ================= */
+const db = mysql.createPool({
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "root",
+  password: process.env.DB_PASSWORD || "",
+  database: "goalzone",
+  port: 3306,
+  waitForConnections: true,
+  connectionLimit: 10
+});
+
+const API_KEY = process.env.API_FOOTBALL_KEY;
+const FOOTBALL_API = "https://v3.football.api-sports.io";
 
 console.log(
-  "OpenAI Key:",
-  process.env.OPENAI_API_KEY ? "FOUND ✅" : "MISSING ❌"
+  "🔑 API FOOTBALL KEY:",
+  API_KEY ? `FOUND (${API_KEY.length} chars)` : "❌ MISSING"
 );
+
+const apiConfig = {
+  headers: {
+    "x-apisports-key": API_KEY
+  }
+};
 
 const openai = process.env.OPENAI_API_KEY
   ? new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey: process.env.OPENAI_API_KEY
     })
   : null;
-
-/* ================= DATABASE ================= */
-
-const db = mysql.createPool({
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "goalzone",
-  password: process.env.DB_PASSWORD || "GoalZone123!",
-  database: process.env.DB_NAME || "goalzone",
-  port: Number(process.env.DB_PORT) || 3306,
-  waitForConnections: true,
-  connectionLimit: 10,
-});
 
 /* ================= HEALTH ================= */
 
@@ -49,14 +54,17 @@ app.get("/api/health", async (req, res) => {
 
     res.json({
       success: true,
-      server: true,
       mysql: true,
       ai: !!openai,
+      transfersApi: !!API_KEY
     });
-  } catch (error) {
+  } catch (e) {
+    console.error("❌ HEALTH:", e.message);
+
     res.status(500).json({
       success: false,
-      message: "Server error",
+      mysql: false,
+      message: e.message
     });
   }
 });
@@ -65,573 +73,486 @@ app.get("/api/health", async (req, res) => {
 
 app.get("/api/matches", async (req, res) => {
   try {
-    const { league } = req.query;
-
-    let sql = `
-      SELECT
-        id,
-        source_id,
-        home_team,
-        away_team,
-        home_logo,
-        away_logo,
-        match_date,
-        status,
-        score_home,
-        score_away,
-        league_id,
-        league_name,
-        country,
-        league_logo
-      FROM matches
-    `;
-
-    const params = [];
-
-    if (league) {
-      sql += ` WHERE league_id = ? `;
-      params.push(league);
-    }
-
-    sql += `
-      ORDER BY match_date ASC, id ASC
-    `;
-
-    const [rows] = await db.query(sql, params);
-
-    res.json({
-      success: true,
-      matches: rows,
-    });
-  } catch (error) {
-    console.error("❌ MATCHES ERROR:", error.message);
-
-    res.status(500).json({
-      success: false,
-      message: "Unable to load matches",
-    });
-  }
-});
-
-/* ================= NEWS ================= */
-
-app.get("/api/news", async (req, res) => {
-  try {
     const [rows] = await db.query(`
-      SELECT
-        id,
-        title,
-        description,
-        image,
-        published_at
-      FROM news
-      ORDER BY published_at DESC, id DESC
-      LIMIT 50
+      SELECT *
+      FROM matches
+      ORDER BY match_date ASC
     `);
 
+    console.log(`⚽ Matches API: ${rows.length}`);
+
     res.json({
       success: true,
-      news: rows,
+      matches: rows
     });
-  } catch (error) {
-    console.error("❌ NEWS ERROR:", error.message);
+  } catch (e) {
+    console.error("❌ MATCHES:", e.message);
 
     res.status(500).json({
       success: false,
-      message: "Unable to load news",
+      matches: [],
+      message: e.message
     });
   }
 });
 
-/* ================= SAVE MATCH ================= */
+/* ================= API FOOTBALL TEST ================= */
 
-async function saveMatch(match) {
-  await db.query(
-    `
-    INSERT INTO matches (
-      source_id,
-      home_team,
-      away_team,
-      home_logo,
-      away_logo,
-      match_date,
-      status,
-      score_home,
-      score_away,
-      league_id,
-      league_name,
-      country,
-      league_logo
-    )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-
-    ON DUPLICATE KEY UPDATE
-      home_team = VALUES(home_team),
-      away_team = VALUES(away_team),
-      home_logo = VALUES(home_logo),
-      away_logo = VALUES(away_logo),
-      match_date = VALUES(match_date),
-      status = VALUES(status),
-      score_home = VALUES(score_home),
-      score_away = VALUES(score_away),
-      league_id = VALUES(league_id),
-      league_name = VALUES(league_name),
-      country = VALUES(country),
-      league_logo = VALUES(league_logo)
-    `,
-    [
-      match.source_id,
-      match.home_team,
-      match.away_team,
-      match.home_logo,
-      match.away_logo,
-      match.match_date,
-      match.status,
-      match.score_home,
-      match.score_away,
-      match.league_id,
-      match.league_name,
-      match.country,
-      match.league_logo,
-    ]
-  );
-}
-
-/* ================= LEAGUES ================= */
-
-const LEAGUES = [
-  {
-    id: "eng.1",
-    name: "Premier League",
-    country: "England",
-  },
-  {
-    id: "esp.1",
-    name: "La Liga",
-    country: "Spain",
-  },
-  {
-    id: "ger.1",
-    name: "Bundesliga",
-    country: "Germany",
-  },
-  {
-    id: "ita.1",
-    name: "Serie A",
-    country: "Italy",
-  },
-  {
-    id: "fra.1",
-    name: "Ligue 1",
-    country: "France",
-  },
-  {
-    id: "uefa.champions",
-    name: "Champions League",
-    country: "Europe",
-  },
-];
-
-/* ================= MATCH SYNC ================= */
-
-let syncRunning = false;
-
-async function syncMatches() {
-  if (syncRunning) {
-    console.log("⏳ Match sync already running...");
-    return;
+async function testFootballApi() {
+  if (!API_KEY) {
+    console.log("❌ API_FOOTBALL_KEY missing");
+    return false;
   }
 
-  syncRunning = true;
-
   try {
-    console.log("\n🔄 Syncing matches...");
-
-    const start = new Date();
-    start.setDate(start.getDate() - 7);
-
-    const end = new Date();
-    end.setDate(end.getDate() + 30);
-
-    const formatDate = (date) =>
-      date.toISOString().slice(0, 10).replaceAll("-", "");
-
-    const startDate = formatDate(start);
-    const endDate = formatDate(end);
-
-    console.log(
-      `📅 Sync range: ${startDate} → ${endDate}`
-    );
-
-    let totalSaved = 0;
-
-    for (const league of LEAGUES) {
-      try {
-        const url =
-          `https://site.api.espn.com/apis/site/v2/sports/soccer/` +
-          `${league.id}/scoreboard?dates=${startDate}-${endDate}`;
-
-        const response = await axios.get(url, {
-          timeout: 15000,
-        });
-
-        const events =
-          response.data?.events || [];
-
-        if (!events.length) {
-          console.log(
-            `⚠️ ${league.name}: no matches`
-          );
-          continue;
-        }
-
-        let saved = 0;
-
-        for (const event of events) {
-          const competition =
-            event.competitions?.[0];
-
-          const competitors =
-            competition?.competitors || [];
-
-          const home = competitors.find(
-            (team) =>
-              team.homeAway === "home"
-          );
-
-          const away = competitors.find(
-            (team) =>
-              team.homeAway === "away"
-          );
-
-          if (!home || !away) continue;
-
-          await saveMatch({
-            source_id: String(event.id),
-
-            home_team:
-              home.team?.displayName ||
-              home.team?.name ||
-              "Home",
-
-            away_team:
-              away.team?.displayName ||
-              away.team?.name ||
-              "Away",
-
-            home_logo:
-              home.team?.logo || "",
-
-            away_logo:
-              away.team?.logo || "",
-
-            match_date:
-              event.date
-                ? new Date(event.date)
-                : null,
-
-            status:
-              event.status?.type?.name ||
-              event.status?.type?.state ||
-              "scheduled",
-
-            score_home:
-              Number(home.score || 0),
-
-            score_away:
-              Number(away.score || 0),
-
-            league_id: league.id,
-            league_name: league.name,
-            country: league.country,
-
-            league_logo:
-              event.league?.logo || "",
-          });
-
-          saved++;
-          totalSaved++;
-        }
-
-        console.log(
-          `✅ ${league.name}: ${saved} matches`
-        );
-      } catch (error) {
-        console.error(
-          `❌ ${league.name}:`,
-          error.message
-        );
+    const response = await axios.get(
+      `${FOOTBALL_API}/status`,
+      {
+        ...apiConfig,
+        timeout: 10000
       }
-    }
+    );
 
     console.log(
-      `✅ Match sync finished. Saved: ${totalSaved}`
+      "🏆 API-FOOTBALL STATUS:",
+      response.data
     );
-  } catch (error) {
-    console.error(
-      "❌ MATCH SYNC ERROR:",
-      error.message
+
+    if (
+      response.data?.errors &&
+      Object.keys(response.data.errors).length
+    ) {
+      console.log(
+        "❌ API ERROR:",
+        response.data.errors
+      );
+
+      return false;
+    }
+
+    console.log("✅ API-Football Connected");
+    return true;
+
+  } catch (e) {
+    console.log(
+      "❌ API-FOOTBALL ERROR:",
+      e.response?.data || e.message
     );
-  } finally {
-    syncRunning = false;
+
+    return false;
   }
 }
 
-/* ================= NEWS SYNC ================= */
+/* ================= TEAM SEARCH ================= */
 
-async function syncNews() {
+function cleanName(name) {
+  return String(name || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\b(fc|cf|afc|sc|ac|club)\b/g, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+async function findTeam(name) {
+  if (!name || !API_KEY) return null;
+
   try {
-    console.log("\n📰 Syncing news...");
+    const response = await axios.get(
+      `${FOOTBALL_API}/teams`,
+      {
+        ...apiConfig,
+        params: {
+          search: name
+        },
+        timeout: 10000
+      }
+    );
 
-    const url =
-      "https://site.api.espn.com/apis/site/v2/sports/soccer/news";
+    const errors = response.data?.errors || {};
+    const teams = response.data?.response || [];
 
-    const response = await axios.get(url, {
-      timeout: 15000,
-    });
-
-    const articles =
-      response.data?.articles || [];
-
-    if (!articles.length) {
-      console.log("⚠️ No news found");
-      return;
-    }
-
-    for (const article of articles.slice(0, 10)) {
-      await db.query(
-        `
-        INSERT INTO news (
-          title,
-          description,
-          image,
-          published_at
-        )
-        VALUES (?, ?, ?, ?)
-        `,
-        [
-          article.headline ||
-            "Football News",
-
-          String(
-            article.description || ""
-          ).slice(0, 500),
-
-          article.images?.[0]?.url || "",
-
-          article.published ||
-            new Date(),
-        ]
+    if (Object.keys(errors).length) {
+      console.log(
+        `❌ API Team ${name}:`,
+        errors
       );
     }
 
     console.log(
-      `✅ News synced: ${Math.min(
-        articles.length,
-        10
-      )}`
+      `🔎 ${name} -> ${teams.length} result(s)`
     );
-  } catch (error) {
+
+    if (!teams.length) return null;
+
+    const wanted = cleanName(name);
+
+    const exact = teams.find(
+      x => cleanName(x.team?.name) === wanted
+    );
+
+    if (exact?.team) {
+      return exact.team;
+    }
+
+    const similar = teams.find(x => {
+      const current = cleanName(x.team?.name);
+
+      return (
+        current.includes(wanted) ||
+        wanted.includes(current)
+      );
+    });
+
+    return similar?.team || teams[0]?.team || null;
+
+  } catch (e) {
     console.log(
-      "⚠️ News unavailable"
+      `❌ Team error ${name}:`,
+      e.response?.data || e.message
     );
+
+    return null;
   }
 }
 
-/* ================= GOALZONE AI ================= */
+/* ================= TRANSFERS API ================= */
 
-app.post("/api/ai/chat", async (req, res) => {
+app.get("/api/transfers", async (req, res) => {
   try {
-    const {
-      message,
-      favorites = [],
-    } = req.body;
+    const [rows] = await db.query(`
+      SELECT
+        id,
+        player,
+        player_photo,
+        from_team,
+        from_logo,
+        to_team,
+        to_logo,
+        fee,
+        transfer_date
+      FROM transfers
+      ORDER BY transfer_date DESC, id DESC
+      LIMIT 100
+    `);
 
-    if (!message?.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "اكتب سؤالك الأول.",
-      });
-    }
-
-    if (!openai) {
-      return res.status(500).json({
-        success: false,
-        message: "الـ AI غير متصل حاليًا.",
-      });
-    }
-
-    /* ===== جلب المباريات ===== */
-
-    const [matches] =
-      await db.query(`
-        SELECT
-          home_team,
-          away_team,
-          match_date,
-          status,
-          score_home,
-          score_away,
-          league_name
-        FROM matches
-        WHERE match_date >= NOW()
-           OR status IN ('in', 'live', 'LIVE')
-        ORDER BY match_date ASC
-        LIMIT 6
-      `);
-
-    /* ===== بيانات صغيرة للـAI ===== */
-
-    const compactMatches =
-      matches.map((m) => ({
-        home: m.home_team,
-        away: m.away_team,
-        date: m.match_date,
-        status: m.status,
-        score:
-          `${m.score_home ?? 0}-${m.score_away ?? 0}`,
-        league: m.league_name,
-      }));
-
-    const compactFavorites =
-      Array.isArray(favorites)
-        ? favorites
-            .slice(0, 5)
-            .map((item) =>
-              typeof item === "string"
-                ? item
-                : item?.name ||
-                  item?.team ||
-                  ""
-            )
-            .filter(Boolean)
-        : [];
-
-    /* ===== تأكيد الموديل ===== */
-
-    console.log("🤖 AI MODEL: gpt-5.5");
-    console.log(
-      "💬 AI QUESTION:",
-      message.trim()
-    );
-
-    /* ===== AI REQUEST ===== */
-
-    const response =
-      await openai.responses.create({
-        model: "gpt-5.5",
-
-        instructions:
-          "أنت GoalZone AI. " +
-          "أجب بالعربية بشكل واضح ومفيد. " +
-          "اعتمد على البيانات المتاحة فقط. " +
-          "لا تخترع نتائج أو مواعيد. " +
-          "إذا لم تجد المعلومة في البيانات، " +
-          "قل إن المعلومة غير متاحة.",
-
-        input:
-          `Matches: ${JSON.stringify(
-            compactMatches
-          )}\n` +
-          `Favorites: ${JSON.stringify(
-            compactFavorites
-          )}\n` +
-          `Question: ${message.trim()}`,
-      });
-
-    const answer =
-      response.output_text?.trim() ||
-      "مش قادر أطلع إجابة دلوقتي.";
+    const transfers = rows.map(t => ({
+      id: t.id,
+      player_name: t.player || "Unknown Player",
+      player_photo: t.player_photo || "",
+      from_team: t.from_team || "Unknown",
+      from_logo: t.from_logo || "",
+      to_team: t.to_team || "Unknown",
+      to_logo: t.to_logo || "",
+      transfer_fee: t.fee || "N/A",
+      transfer_date: t.transfer_date || null
+    }));
 
     console.log(
-      "✅ AI RESPONSE RECEIVED"
+      `🔄 Transfers API: ${transfers.length}`
     );
 
-    return res.json({
+    res.json({
       success: true,
-      answer,
+      transfers
     });
 
-  } catch (error) {
+  } catch (e) {
     console.error(
-      "❌ AI ERROR:",
-      error?.message || "Unknown error"
+      "❌ TRANSFERS API:",
+      e.message
     );
 
-    /* ===== 429 ===== */
-
-    if (
-      error?.status === 429 ||
-      error?.code === "rate_limit_exceeded"
-    ) {
-      return res.status(429).json({
-        success: false,
-        message:
-          "الـ AI مش متاح مؤقتًا، جرّب بعد شوية.",
-      });
-    }
-
-    /* ===== أخطاء OpenAI ===== */
-
-    if (
-      error?.status >= 400 &&
-      error?.status < 500
-    ) {
-      return res.status(500).json({
-        success: false,
-        message:
-          "حصلت مشكلة مؤقتة في خدمة الـ AI.",
-      });
-    }
-
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
-      message:
-        "حصل خطأ أثناء تشغيل GoalZone AI.",
+      transfers: [],
+      message: e.message
     });
   }
 });
 
-/* ================= START SERVER ================= */
+/* ================= TRANSFERS SYNC ================= */
 
-async function startServer() {
-  try {
-    await db.query("SELECT 1");
+async function syncTransfers() {
+  if (!API_KEY) {
+    console.log("❌ No API_FOOTBALL_KEY");
+    return;
+  }
 
+  const apiOk = await testFootballApi();
+
+  if (!apiOk) {
     console.log(
-      "✅ MySQL Connected"
+      "⛔ Transfers sync stopped بسبب مشكلة API-Football"
     );
+    return;
+  }
 
-    app.listen(
-      PORT,
-      "0.0.0.0",
-      () => {
+  console.log("\n🔄 Syncing transfers...");
+
+  try {
+    const [teams] = await db.query(`
+      SELECT DISTINCT home_team AS team
+      FROM matches
+      WHERE home_team IS NOT NULL
+
+      UNION
+
+      SELECT DISTINCT away_team AS team
+      FROM matches
+      WHERE away_team IS NOT NULL
+    `);
+
+    let saved = 0;
+
+    for (const row of teams.slice(0, 20)) {
+      if (!row.team) continue;
+
+      const team = await findTeam(row.team);
+
+      if (!team?.id) {
         console.log(
-          `🚀 Server running on http://127.0.0.1:${PORT}`
+          `⚠️ Team not found: ${row.team}`
+        );
+        continue;
+      }
+
+      try {
+        const response = await axios.get(
+          `${FOOTBALL_API}/transfers`,
+          {
+            ...apiConfig,
+            params: {
+              team: team.id
+            },
+            timeout: 15000
+          }
+        );
+
+        const errors =
+          response.data?.errors || {};
+
+        if (Object.keys(errors).length) {
+          console.log(
+            `⚠️ Transfers ${row.team}:`,
+            errors
+          );
+          continue;
+        }
+
+        const list =
+          response.data?.response || [];
+
+        for (const item of list) {
+          const player = item.player;
+
+          if (!player?.name) continue;
+
+          for (const transfer of item.transfers || []) {
+            const from = transfer.teams?.out;
+            const to = transfer.teams?.in;
+
+            const fromTeam = from?.name || "";
+            const toTeam = to?.name || "";
+
+            if (!fromTeam && !toTeam) continue;
+
+            const fromLogo = from?.logo || "";
+            const toLogo = to?.logo || "";
+
+            const date = transfer.date
+              ? new Date(transfer.date)
+                  .toISOString()
+                  .slice(0, 10)
+              : null;
+
+            if (!date) continue;
+
+            const fee =
+              transfer.type || "N/A";
+
+            const photo =
+              player.photo || "";
+
+            const [exists] = await db.query(
+              `
+              SELECT id
+              FROM transfers
+              WHERE player = ?
+              AND from_team = ?
+              AND to_team = ?
+              AND transfer_date = ?
+              LIMIT 1
+              `,
+              [
+                player.name,
+                fromTeam,
+                toTeam,
+                date
+              ]
+            );
+
+            if (exists.length) {
+              await db.query(
+                `
+                UPDATE transfers
+                SET
+                  player_photo = ?,
+                  from_logo = ?,
+                  to_logo = ?,
+                  fee = ?
+                WHERE id = ?
+                `,
+                [
+                  photo,
+                  fromLogo,
+                  toLogo,
+                  fee,
+                  exists[0].id
+                ]
+              );
+
+              continue;
+            }
+
+            await db.query(
+              `
+              INSERT INTO transfers
+              (
+                player,
+                player_photo,
+                from_team,
+                from_logo,
+                to_team,
+                to_logo,
+                fee,
+                transfer_date
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              `,
+              [
+                player.name,
+                photo,
+                fromTeam,
+                fromLogo,
+                toTeam,
+                toLogo,
+                fee,
+                date
+              ]
+            );
+
+            saved++;
+          }
+        }
+
+        console.log(
+          `✅ ${row.team}`
+        );
+
+      } catch (e) {
+        console.log(
+          `⚠️ Transfer ${row.team}:`,
+          e.response?.data || e.message
         );
       }
+    }
+
+    console.log(
+      `✅ Transfers saved: ${saved}`
     );
 
-    await syncMatches();
-
-    await syncNews();
-
-    setInterval(
-      syncMatches,
-      5 * 60 * 1000
-    );
-
-    setInterval(
-      syncNews,
-      10 * 60 * 1000
-    );
-
-  } catch (error) {
-    console.error(
-      "❌ Server startup error:",
-      error.message
+  } catch (e) {
+    console.log(
+      "❌ Transfer sync:",
+      e.message
     );
   }
 }
 
-startServer();
+/* ================= AI ================= */
+
+app.post("/api/ai/chat", async (req, res) => {
+  try {
+    if (!openai) {
+      return res.status(500).json({
+        success: false,
+        message: "OPENAI_API_KEY missing"
+      });
+    }
+
+    const message =
+      String(req.body.message || "").trim();
+
+    if (!message) {
+      return res.status(400).json({
+        success: false,
+        message: "اكتب رسالة"
+      });
+    }
+
+    const response =
+      await openai.responses.create({
+        model: "gpt-5.6-luna",
+        instructions:
+          "أنت GoalZone AI. أجب بالعربية باختصار شديد. تحدث فقط عن كرة القدم.",
+        input: message,
+        max_output_tokens: 300
+      });
+
+    res.json({
+      success: true,
+      answer:
+        response.output_text ||
+        "لم أستطع توليد إجابة."
+    });
+
+  } catch (e) {
+    console.error(
+      "❌ AI ERROR:",
+      e.message
+    );
+
+    res.status(500).json({
+      success: false,
+      message: e.message
+    });
+  }
+});
+
+/* ================= START ================= */
+
+async function start() {
+  try {
+    await db.query("SELECT 1");
+
+    console.log("✅ MySQL Connected");
+
+    const server = app.listen(
+      PORT,
+      "0.0.0.0",
+      () => {
+        console.log(
+          `🚀 Server: http://127.0.0.1:${PORT}`
+        );
+      }
+    );
+
+    server.on("error", err => {
+      console.error(
+        "❌ SERVER LISTEN ERROR:",
+        err.message
+      );
+    });
+
+    await syncTransfers();
+
+  } catch (e) {
+    console.error(
+      "❌ SERVER ERROR:",
+      e.message
+    );
+  }
+}
+
+start();

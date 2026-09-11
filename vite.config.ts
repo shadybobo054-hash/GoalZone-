@@ -3,15 +3,8 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/uploded_project/",
-
   server: {
-    proxy: {
-      "/api/espn": {
-        target: "https://site.api.espn.com",
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/espn/, "/apis/site/v2"),
-      },
-    },
+    host: "localhost",
+    port: 5173,
   },
 });

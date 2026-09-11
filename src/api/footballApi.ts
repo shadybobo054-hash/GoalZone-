@@ -13,30 +13,22 @@ export type Competitor = {
   score?: string;
 };
 
-export type CompetitionStatus = {
-  type?: {
-    state?: string;
-    detail?: string;
-    description?: string;
-  };
-};
-
 export type ApiEvent = {
   id: string | number;
   name?: string;
   date?: string;
   status?: string;
-
-  league?: {
-    id?: string;
-    name?: string;
-  };
-
+  league?: { id?: string; name?: string };
   competitions?: {
     competitors?: Competitor[];
-    status?: CompetitionStatus;
+    status?: {
+      type?: {
+        state?: string;
+        detail?: string;
+        description?: string;
+      };
+    };
   }[];
-
   home_team?: string;
   away_team?: string;
   home_logo?: string;
@@ -67,42 +59,20 @@ export const LEAGUES = {
 const ESPN_URL =
   "https://site.api.espn.com/apis/site/v2/sports/soccer";
 
-const BASE_URL =
-  "http://127.0.0.1:5000/api";
+const BASE_URL = "http://127.0.0.1:5000/api";
 
-/* ================= SAFE FETCH ================= */
+async function fetchJSON(url: string) {
+  const response = await fetch(url, { cache: "no-store" });
 
-async function fetchJSON(
-  url: string,
-  options?: RequestInit
-) {
-  const response = await fetch(url, {
-    ...options,
-    cache: "no-store",
-  });
+  if (!response.ok)
+    throw new Error(`Server Error ${response.status}`);
 
-  if (!response.ok) {
-    throw new Error(
-      `Server Error ${response.status}`
-    );
-  }
+  const data = await response.json();
 
-  const text = await response.text();
-
-  if (!text) {
-    throw new Error("Empty server response");
-  }
-
-  try {
-    return JSON.parse(text);
-  } catch {
-    throw new Error(
-      "Server returned invalid JSON"
-    );
-  }
+  return data;
 }
 
-/* ================= ESPN MATCHES ================= */
+/* MATCHES */
 
 export async function getMatches(
   league: string = LEAGUES.premierLeague
@@ -111,186 +81,107 @@ export async function getMatches(
     `${ESPN_URL}/${league}/scoreboard`
   );
 
-  if (!Array.isArray(data?.events)) {
-    return [];
-  }
-
-  return data.events;
+  return Array.isArray(data?.events)
+    ? data.events
+    : [];
 }
 
-/* ================= MATCH DETAILS ================= */
+/* MATCH DETAILS */
 
 export async function getMatchDetails(
   league: string,
   eventId: string
 ): Promise<MatchDetails | null> {
-  try {
-    const events = await getMatches(league);
-    return (
-      events.find(
-        (e) => String(e.id) === String(eventId)
-      ) ?? null
-    );
-  } catch {
-    return null;
-  }
+  const matches = await getMatches(league);
+
+  return (
+    matches.find(
+      (m) => String(m.id) === String(eventId)
+    ) ?? null
+  );
 }
 
-/* ================= FEATURED ================= */
+/* FEATURED */
 
-export async function getFeaturedMatches(): Promise<
-  ApiEvent[]
-> {
-  const leagues = [
-    LEAGUES.premierLeague,
-    LEAGUES.laLiga,
-    LEAGUES.bundesliga,
-    LEAGUES.serieA,
-    LEAGUES.ligue1,
-  ];
+export async function getFeaturedMatches(): Promise<ApiEvent[]> {
+  const leagues = Object.values(LEAGUES);
 
   const results = await Promise.allSettled(
-    leagues.map((league) =>
-      getMatches(league)
-    )
+    leagues.map(getMatches)
   );
 
-  const allMatches: ApiEvent[] = [];
+  const matches: ApiEvent[] = [];
 
-  for (const result of results) {
-    if (
-      result.status === "fulfilled" &&
-      Array.isArray(result.value)
-    ) {
-      allMatches.push(...result.value);
-    }
-  }
+  results.forEach((result) => {
+    if (result.status === "fulfilled")
+      matches.push(...result.value);
+  });
 
-  return allMatches
-    .filter((match) => match.date)
+  return matches
+    .filter((m) => m.date)
     .sort(
       (a, b) =>
-        new Date(
-          a.date || ""
-        ).getTime() -
-        new Date(
-          b.date || ""
-        ).getTime()
+        new Date(a.date!).getTime() -
+        new Date(b.date!).getTime()
     )
     .slice(0, 6);
 }
 
-/* ================= BACKEND MATCHES ================= */
+/* BACKEND MATCHES */
 
 export type BackendMatch = {
   id: number;
   source_id?: string | null;
-
   home_team: string;
   away_team: string;
-
   home_logo: string | null;
   away_logo: string | null;
-
   match_date: string;
   status: string;
-
   score_home: number;
   score_away: number;
-
   league_id: string | null;
   league_name: string | null;
-
   country: string | null;
   league_logo: string | null;
 };
 
-type MatchesResponse = {
-  success?: boolean;
-  matches?: BackendMatch[];
-};
+export async function getBackendMatches(): Promise<BackendMatch[]> {
+  const data = await fetchJSON(`${BASE_URL}/matches`);
 
-/*
- * ده المصدر المستخدم في Matches.tsx.
- *
- * مهم:
- * الدالة دي لا ترجع [] عند خطأ السيرفر.
- * بترمي Error عشان الصفحة تحتفظ بالبيانات
- * الموجودة بدل ما تمسحها.
- */
-export async function getBackendMatches(): Promise<
-  BackendMatch[]
-> {
-  const data: BackendMatch[] | MatchesResponse =
-    await fetchJSON(
-      `${BASE_URL}/matches`
-    );
-
-  if (Array.isArray(data)) {
+  if (Array.isArray(data))
     return data;
-  }
 
-  if (Array.isArray(data.matches)) {
+  if (Array.isArray(data?.matches))
     return data.matches;
-  }
 
-  throw new Error(
-    "Invalid matches response"
-  );
+  throw new Error("Invalid matches response");
 }
 
-/* ================= LEAGUES ================= */
+/* LEAGUES */
 
-export async function getLeagues(): Promise<
-  League[]
-> {
+export async function getLeagues(): Promise<League[]> {
   return [
-    {
-      id: "eng.1",
-      name: "Premier League",
-      country: "England",
-    },
-    {
-      id: "esp.1",
-      name: "La Liga",
-      country: "Spain",
-    },
-    {
-      id: "ger.1",
-      name: "Bundesliga",
-      country: "Germany",
-    },
-    {
-      id: "ita.1",
-      name: "Serie A",
-      country: "Italy",
-    },
-    {
-      id: "fra.1",
-      name: "Ligue 1",
-      country: "France",
-    },
-    {
-      id: "uefa.champions",
-      name: "Champions League",
-      country: "Europe",
-    },
+    { id: "eng.1", name: "Premier League", country: "England" },
+    { id: "esp.1", name: "La Liga", country: "Spain" },
+    { id: "ger.1", name: "Bundesliga", country: "Germany" },
+    { id: "ita.1", name: "Serie A", country: "Italy" },
+    { id: "fra.1", name: "Ligue 1", country: "France" },
+    { id: "uefa.champions", name: "Champions League", country: "Europe" },
   ];
 }
 
-/* ================= NEWS ================= */
+/* NEWS */
 
 export async function getNews() {
-  return fetchJSON(
-    `${BASE_URL}/news`
-  );
+  const data = await fetchJSON(`${BASE_URL}/news`);
+  return data?.news ?? [];
 }
 
-/* ================= TRANSFERS ================= */
+/* TRANSFERS */
 
 export async function getTransfers() {
-  return fetchJSON(
-    `${BASE_URL}/transfers`
-  );
+  const data = await fetchJSON(`${BASE_URL}/transfers`);
+  return data?.transfers ?? [];
 }
 
