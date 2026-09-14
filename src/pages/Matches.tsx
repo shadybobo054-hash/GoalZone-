@@ -23,7 +23,7 @@ type ApiResponse = {
   matches?: Match[];
 };
 
-const API_URL = "http://127.0.0.1:5000/api/matches";
+const API_URL = "http://127.0.0.1:5174/api/matches";
 
 function dateKey(date: Date) {
   return `${date.getFullYear()}-${String(

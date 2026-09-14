@@ -4,458 +4,322 @@ import "./Transfers.css";
 type Transfer = {
   id: number;
   player_name: string;
-  player_photo?: string;
-  from_team?: string;
-  from_logo?: string;
-  to_team?: string;
-  to_logo?: string;
-  transfer_fee?: string;
-  position?: string;
-  transfer_date?: string;
+  player_photo?: string | null;
+  from_team?: string | null;
+  from_logo?: string | null;
+  to_team?: string | null;
+  to_logo?: string | null;
+  transfer_fee?: string | null;
+  position?: string | null;
+  transfer_date?: string | null;
 };
 
-const API_URL = "http://127.0.0.1:5000/api/transfers";
-const PER_PAGE = 6;
+const API_URL = "http://127.0.0.1:5174/api/transfers";
+
+const ITEMS_PER_PAGE = 12;
 
 export default function Transfers() {
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
   const [error, setError] = useState("");
-
-  async function loadTransfers() {
-    try {
-      setLoading(true);
-      setError("");
-
-      const response = await fetch(API_URL);
-
-      if (!response.ok) {
-        throw new Error("Failed to load transfers");
-      }
-
-      const data = await response.json();
-
-      console.log("Transfers:", data);
-
-      setTransfers(data.transfers || []);
-      setPage(1);
-    } catch (err) {
-      console.error("Transfers error:", err);
-      setError("Unable to load transfers.");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
+    async function loadTransfers() {
+      try {
+        setLoading(true);
+        setError("");
+
+        const response = await fetch(API_URL, {
+          cache: "no-store",
+        });
+
+        if (!response.ok) {
+          throw new Error(
+            `Server Error ${response.status}`
+          );
+        }
+
+        const data = await response.json();
+
+        if (
+          Array.isArray(data.transfers) &&
+          data.transfers.length > 0
+        ) {
+          setTransfers(data.transfers);
+        } else {
+          console.warn(
+            "⚠️ No transfers returned. Keeping saved data."
+          );
+        }
+      } catch (err) {
+        console.error(
+          "Transfers error:",
+          err
+        );
+
+        setError(
+          "Unable to refresh transfers. Showing saved data."
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
     loadTransfers();
   }, []);
 
   const totalPages = Math.ceil(
-    transfers.length / PER_PAGE
+    transfers.length / ITEMS_PER_PAGE
   );
 
   const startIndex =
-    (page - 1) * PER_PAGE;
+    (currentPage - 1) *
+    ITEMS_PER_PAGE;
 
-  const visibleTransfers =
+  const currentTransfers =
     transfers.slice(
       startIndex,
-      startIndex + PER_PAGE
+      startIndex + ITEMS_PER_PAGE
     );
 
-  function formatDate(date?: string) {
-    if (!date) return "N/A";
+  const changePage = (page: number) => {
+    if (
+      page < 1 ||
+      page > totalPages
+    )
+      return;
 
-    const value = new Date(date);
+    setCurrentPage(page);
 
-    if (isNaN(value.getTime())) {
-      return date;
-    }
-
-    return value.toLocaleDateString("en-GB");
-  }
-
-  function handleImageError(
-    e: React.SyntheticEvent<HTMLImageElement>
-  ) {
-    e.currentTarget.style.display = "none";
-  }
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   return (
-    <div className="transfers-page">
-
-      {/* ================= HERO ================= */}
-
+    <main className="transfers-page">
       <section className="transfers-hero">
+        <span>
+          GOALZONE • TRANSFER CENTER
+        </span>
 
-        <div className="transfers-overlay" />
+        <h1>
+          FOOTBALL <b>TRANSFERS</b>
+        </h1>
 
-        <div className="transfers-hero-content">
-
-          <span>
-            FOOTBALL • TRANSFERS • 24/7
-          </span>
-
-          <h1>
-            THE LATEST
-            <br />
-            <b>TRANSFERS.</b>
-          </h1>
-
-          <p>
-            Follow the latest player moves,
-            club changes and transfer activity
-            from the world of football.
-          </p>
-
-        </div>
-
+        <p>
+          Latest football transfers and player moves.
+        </p>
       </section>
 
-      {/* ================= CONTENT ================= */}
-
       <section className="transfers-section">
+        <div className="transfers-heading">
+          <div>
+            <span>
+              TRANSFER CENTER
+            </span>
 
-        <div className="section-heading">
+            <h2>
+              Latest <b>Transfers</b>
+            </h2>
+          </div>
 
-          <span>
-            TRANSFER CENTER
-          </span>
-
-          <h2>
-            Latest <b>Transfers</b>
-          </h2>
-
+          <strong>
+            {transfers.length} TRANSFERS
+          </strong>
         </div>
-
-        {/* ================= CONTROLS ================= */}
-
-        <div className="transfer-controls">
-
-          <button
-            className="transfer-btn primary"
-            onClick={loadTransfers}
-          >
-            <span>↻</span>
-            REFRESH
-          </button>
-
-          <button
-            className="transfer-btn secondary"
-            onClick={() => setPage(1)}
-          >
-            <span>⌂</span>
-            FIRST PAGE
-          </button>
-
-        </div>
-
-        {/* ================= LOADING ================= */}
 
         {loading && (
-          <div className="transfer-state">
-
-            <div className="spinner" />
-
-            <h3>
-              Loading transfers...
-            </h3>
-
-            <p>
-              Getting the latest football moves.
-            </p>
-
+          <div className="transfers-state">
+            Loading transfers...
           </div>
         )}
 
-        {/* ================= ERROR ================= */}
-
-        {!loading && error && (
-          <div className="transfer-state">
-
-            <span>⚠️</span>
-
-            <h3>
-              Something went wrong
-            </h3>
-
-            <p>
-              {error}
-            </p>
-
-          </div>
-        )}
-
-        {/* ================= EMPTY ================= */}
+        {!loading &&
+          error &&
+          transfers.length === 0 && (
+            <div className="transfers-state">
+              ⚠ {error}
+            </div>
+          )}
 
         {!loading &&
           !error &&
           transfers.length === 0 && (
-
-            <div className="transfer-state">
-
-              <span>⚽</span>
-
+            <div className="transfers-state">
               <h3>
-                No transfers found
+                No transfers available
               </h3>
-
-              <p>
-                Transfer data is not available right now.
-              </p>
-
             </div>
           )}
 
-        {/* ================= CARDS ================= */}
-
         {!loading &&
-          !error &&
-          visibleTransfers.length > 0 && (
+          currentTransfers.length > 0 && (
+            <>
+              {error &&
+                transfers.length > 0 && (
+                  <div className="transfers-state">
+                    ⚠ {error}
+                  </div>
+                )}
 
-            <div className="transfers-grid">
-
-              {visibleTransfers.map(
-                (transfer) => (
-
-                  <article
-                    className="transfer-card"
-                    key={transfer.id}
-                  >
-
-                    {/* TOP */}
-
-                    <div className="transfer-top">
-
-                      <span>
-                        {formatDate(
-                          transfer.transfer_date
-                        )}
-                      </span>
-
-                      <b>
-                        TRANSFER
-                      </b>
-
-                    </div>
-
-                    {/* PLAYER */}
-
-                    <div className="player">
-
-                      <div className="player-photo">
-
+              <div className="transfers-grid">
+                {currentTransfers.map(
+                  (transfer) => (
+                    <article
+                      className="transfer-card"
+                      key={transfer.id}
+                    >
+                      <div className="transfer-player">
                         {transfer.player_photo ? (
-
                           <img
-                            src={transfer.player_photo}
-                            alt={transfer.player_name}
-                            loading="lazy"
-                            referrerPolicy="no-referrer"
-                            onError={handleImageError}
+                            src={
+                              transfer.player_photo
+                            }
+                            alt={
+                              transfer.player_name
+                            }
                           />
-
                         ) : (
+                          <div className="player-placeholder">
+                            ⚽
+                          </div>
+                        )}
+
+                        <div>
+                          <h3>
+                            {
+                              transfer.player_name
+                            }
+                          </h3>
+
+                          {transfer.position && (
+                            <span>
+                              {
+                                transfer.position
+                              }
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="transfer-teams">
+                        <div className="transfer-team">
+                          {transfer.from_logo && (
+                            <img
+                              src={
+                                transfer.from_logo
+                              }
+                              alt=""
+                            />
+                          )}
 
                           <span>
-                            ⚽
+                            {transfer.from_team ||
+                              "Free Agent"}
                           </span>
+                        </div>
 
+                        <b>→</b>
+
+                        <div className="transfer-team">
+                          {transfer.to_logo && (
+                            <img
+                              src={
+                                transfer.to_logo
+                              }
+                              alt=""
+                            />
+                          )}
+
+                          <span>
+                            {transfer.to_team ||
+                              "Unknown"}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="transfer-info">
+                        <strong>
+                          {transfer.transfer_fee ||
+                            "Undisclosed"}
+                        </strong>
+
+                        {transfer.transfer_date && (
+                          <small>
+                            {
+                              transfer.transfer_date
+                            }
+                          </small>
                         )}
-
                       </div>
+                    </article>
+                  )
+                )}
+              </div>
 
-                      <h3>
-                        {transfer.player_name}
-                      </h3>
-
-                      {transfer.position && (
-                        <small>
-                          {transfer.position}
-                        </small>
-                      )}
-
-                    </div>
-
-                    {/* CLUBS */}
-
-                    <div className="clubs">
-
-                      {/* FROM */}
-
-                      <div className="club">
-
-                        <div className="club-logo">
-
-                          {transfer.from_logo ? (
-
-                            <img
-                              src={transfer.from_logo}
-                              alt={
-                                transfer.from_team ||
-                                "Previous club"
-                              }
-                              loading="lazy"
-                              referrerPolicy="no-referrer"
-                              onError={handleImageError}
-                            />
-
-                          ) : (
-
-                            <span>
-                              ⚽
-                            </span>
-
-                          )}
-
-                        </div>
-
-                        <strong>
-                          {transfer.from_team ||
-                            "Unknown"}
-                        </strong>
-
-                      </div>
-
-                      {/* ARROW */}
-
-                      <div className="transfer-arrow">
-                        →
-                      </div>
-
-                      {/* TO */}
-
-                      <div className="club">
-
-                        <div className="club-logo">
-
-                          {transfer.to_logo ? (
-
-                            <img
-                              src={transfer.to_logo}
-                              alt={
-                                transfer.to_team ||
-                                "New club"
-                              }
-                              loading="lazy"
-                              referrerPolicy="no-referrer"
-                              onError={handleImageError}
-                            />
-
-                          ) : (
-
-                            <span>
-                              ⚽
-                            </span>
-
-                          )}
-
-                        </div>
-
-                        <strong>
-                          {transfer.to_team ||
-                            "Unknown"}
-                        </strong>
-
-                      </div>
-
-                    </div>
-
-                    {/* BOTTOM */}
-
-                    <div className="transfer-bottom">
-
-                      <span>
-                        TRANSFER TYPE
-                      </span>
-
-                      <strong>
-                        {transfer.transfer_fee ||
-                          "N/A"}
-                      </strong>
-
-                    </div>
-
-                  </article>
-
-                )
-              )}
-
-            </div>
-          )}
-
-        {/* ================= PAGINATION ================= */}
-
-        {!loading &&
-          !error &&
-          transfers.length > PER_PAGE && (
-
-            <>
-
-              <div className="transfers-pagination">
-
-                <button
-                  className="page-arrow"
-                  disabled={page === 1}
-                  onClick={() =>
-                    setPage((p) => p - 1)
-                  }
-                >
-                  ←
-                </button>
-
-                {Array.from(
-                  {
-                    length: totalPages
-                  },
-                  (_, index) => index + 1
-                ).map((number) => (
-
+              {totalPages > 1 && (
+                <div className="pagination">
                   <button
-                    key={number}
-                    className={`page-number ${
-                      page === number
-                        ? "active"
-                        : ""
-                    }`}
                     onClick={() =>
-                      setPage(number)
+                      changePage(
+                        currentPage - 1
+                      )
+                    }
+                    disabled={
+                      currentPage === 1
                     }
                   >
-                    {number}
+                    ←
                   </button>
 
-                ))}
+                  {Array.from(
+                    {
+                      length: totalPages,
+                    },
+                    (_, index) =>
+                      index + 1
+                  ).map((page) => (
+                    <button
+                      key={page}
+                      className={
+                        currentPage === page
+                          ? "active"
+                          : ""
+                      }
+                      onClick={() =>
+                        changePage(page)
+                      }
+                    >
+                      {page}
+                    </button>
+                  ))}
 
-                <button
-                  className="page-arrow"
-                  disabled={
-                    page === totalPages
-                  }
-                  onClick={() =>
-                    setPage((p) => p + 1)
-                  }
-                >
-                  →
-                </button>
+                  <button
+                    onClick={() =>
+                      changePage(
+                        currentPage + 1
+                      )
+                    }
+                    disabled={
+                      currentPage ===
+                      totalPages
+                    }
+                  >
+                    →
+                  </button>
+                </div>
+              )}
 
+              <div className="pagination-info">
+                Page {currentPage} of{" "}
+                {totalPages}
               </div>
-
-              <div className="transfer-page-info">
-
-                PAGE {page} OF {totalPages}
-                {" • "}
-                {transfers.length} TRANSFERS
-
-              </div>
-
             </>
           )}
-
       </section>
-
-    </div>
+    </main>
   );
 }

@@ -45,7 +45,7 @@ export default function GoalZoneAI() {
       }
 
       const response = await fetch(
-        "http://127.0.0.1:5000/api/ai/chat",
+        "http://127.0.0.1:5174/api/ai/chat",
         {
           method: "POST",
           headers: {

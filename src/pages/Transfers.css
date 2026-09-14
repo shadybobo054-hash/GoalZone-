@@ -1,3 +1,4 @@
+
 .transfers-page{
 min-height:100vh;
 background:
@@ -59,14 +60,6 @@ linear-gradient(0deg,#020403 0%,transparent 55%);
 opacity:.9;
 }
 
-.transfers-overlay{
-position:absolute;
-inset:0;
-background:
-radial-gradient(circle at 70% 45%,#22c55e18,transparent 30%),
-linear-gradient(180deg,transparent 65%,#020403 100%);
-}
-
 .transfers-hero-content{
 position:relative;
 z-index:3;
@@ -75,7 +68,7 @@ margin:auto;
 padding:80px 0;
 }
 
-.transfers-hero-content span{
+.transfers-hero span{
 color:#22c55e;
 font-size:12px;
 font-weight:900;
@@ -88,7 +81,7 @@ margin:18px 0;
 font-size:clamp(58px,8vw,100px);
 line-height:.9;
 letter-spacing:-4px;
-color:#fff !important;
+color:#fff;
 }
 
 .transfers-hero h1 b{
@@ -123,150 +116,50 @@ radial-gradient(circle at 10% 20%,#22c55e09,transparent 25%),
 radial-gradient(circle at 90% 70%,#22c55e08,transparent 25%);
 }
 
-.section-heading{
+.transfers-heading{
+display:flex;
+justify-content:space-between;
+align-items:end;
+gap:20px;
 margin-bottom:25px;
 }
 
-.section-heading span{
+.transfers-heading > div > span{
 color:#22c55e;
 font-size:11px;
 font-weight:900;
 letter-spacing:2px;
 }
 
-.section-heading h2{
+.transfers-heading h2{
 margin:8px 0 0;
 font-size:38px;
 color:#fff;
 }
 
-.section-heading h2 b{
+.transfers-heading h2 b{
 color:#22c55e;
 }
 
-/* ================= CONTROLS ================= */
-
-.transfer-controls{
-display:flex;
-align-items:center;
-gap:12px;
-margin-bottom:32px;
-}
-
-.transfer-btn{
-position:relative;
-display:flex;
-align-items:center;
-justify-content:center;
-gap:9px;
-min-width:145px;
-height:46px;
-padding:0 18px;
-border-radius:12px;
-font-size:11px;
-font-weight:900;
-letter-spacing:1.3px;
-cursor:pointer;
-overflow:hidden;
-transition:.3s ease;
-}
-
-.transfer-btn span{
-font-size:17px;
-line-height:1;
-transition:.35s ease;
-}
-
-/* REFRESH */
-
-.transfer-btn.primary{
-border:1px solid #22c55e55;
-background:
-linear-gradient(135deg,#22c55e22,#22c55e08),
-#071009;
+.transfers-heading > strong{
+padding:9px 13px;
+border:1px solid #22c55e25;
+border-radius:8px;
+background:#22c55e0c;
 color:#4ade80;
-box-shadow:
-0 8px 25px #0008,
-inset 0 1px 0 #ffffff0a;
+font-size:10px;
+letter-spacing:1px;
 }
 
-.transfer-btn.primary::before{
-content:"";
-position:absolute;
-top:0;
-left:-100%;
-width:70%;
-height:100%;
-background:linear-gradient(
-90deg,
-transparent,
-#ffffff12,
-transparent
-);
-transform:skewX(-20deg);
-transition:.5s;
-}
-
-.transfer-btn.primary:hover{
-transform:translateY(-3px);
-border-color:#22c55e;
-color:#fff;
-background:
-linear-gradient(135deg,#22c55e,#15803d);
-box-shadow:
-0 12px 30px #000,
-0 0 25px #22c55e25;
-}
-
-.transfer-btn.primary:hover::before{
-left:130%;
-}
-
-.transfer-btn.primary:hover span{
-transform:rotate(180deg);
-}
-
-/* FIRST PAGE */
-
-.transfer-btn.secondary{
-border:1px solid #ffffff12;
-background:
-linear-gradient(145deg,#ffffff09,#ffffff02),
-#080b09;
-color:#9aa39e;
-box-shadow:
-0 8px 25px #0007,
-inset 0 1px 0 #ffffff06;
-}
-
-.transfer-btn.secondary:hover{
-transform:translateY(-3px);
-border-color:#22c55e45;
-background:
-linear-gradient(145deg,#22c55e12,#ffffff04),
-#090d0a;
-color:#fff;
-box-shadow:
-0 12px 30px #000,
-0 0 22px #22c55e12;
-}
-
-.transfer-btn.secondary:hover span{
-transform:translateY(-2px) scale(1.08);
-color:#4ade80;
-}
-
-.transfer-btn:active{
-transform:translateY(0) scale(.97);
-}
-
-/* ================= CARDS ================= */
+/* ================= GRID ================= */
 
 .transfers-grid{
 display:grid;
 grid-template-columns:repeat(3,1fr);
 gap:22px;
 }
+
+/* ================= CARD ================= */
 
 .transfer-card{
 position:relative;
@@ -317,107 +210,65 @@ box-shadow:
 transform:scale(1.4);
 }
 
-/* ================= TOP ================= */
+/* ================= PLAYER ================= */
 
-.transfer-top{
+.transfer-player{
 position:relative;
 z-index:2;
 display:flex;
-justify-content:space-between;
 align-items:center;
+gap:15px;
+padding:10px 0 22px;
 }
 
-.transfer-top span{
-color:#77827b;
-font-size:10px;
-font-weight:800;
-letter-spacing:1px;
-text-transform:uppercase;
-}
-
-.transfer-top b{
-padding:5px 8px;
-border:1px solid #22c55e25;
-border-radius:6px;
-background:#22c55e0c;
-color:#4ade80;
-font-size:9px;
-}
-
-/* ================= PLAYER ================= */
-
-.player{
-position:relative;
-z-index:2;
-text-align:center;
-padding:25px 0 22px;
-}
-
-.player-photo{
-position:relative;
-width:145px;
-height:145px;
-margin:auto;
-display:grid;
-place-items:center;
-overflow:hidden;
-border:2px solid #22c55e45;
+.transfer-player img,
+.player-placeholder{
+width:75px;
+height:75px;
+flex-shrink:0;
 border-radius:50%;
+object-fit:cover;
+border:2px solid #22c55e45;
 background:
 radial-gradient(circle at 50% 20%,#1d6b37,#0b1710 72%);
 box-shadow:
 0 18px 40px #000,
 0 0 30px #22c55e12;
-transition:.35s;
 }
 
-.player-photo::after{
-content:"";
-position:absolute;
-inset:8px;
-border:1px solid #ffffff12;
-border-radius:50%;
+.player-placeholder{
+display:grid;
+place-items:center;
+font-size:30px;
 }
 
-.transfer-card:hover .player-photo{
-transform:scale(1.05);
+.transfer-card:hover .transfer-player img,
+.transfer-card:hover .player-placeholder{
 border-color:#22c55e70;
 box-shadow:
 0 20px 45px #000,
 0 0 40px #22c55e20;
 }
 
-.player-photo img{
-width:100%;
-height:100%;
-object-fit:cover;
-position:relative;
-z-index:2;
-}
-
-.player-photo span{
-font-size:42px;
-}
-
-.player h3{
-margin:15px 0 3px;
+.transfer-player h3{
+margin:0 0 5px;
 font-size:20px;
 font-weight:900;
 }
 
-.player small{
+.transfer-player span{
 color:#7f8983;
 font-size:11px;
 text-transform:uppercase;
 }
 
-/* ================= CLUBS ================= */
+/* ================= TEAMS ================= */
 
-.clubs{
+.transfer-teams{
 position:relative;
 z-index:2;
 display:grid;
-grid-template-columns:1fr 60px 1fr;
+grid-template-columns:1fr 50px 1fr;
 align-items:center;
 gap:8px;
 padding:20px 0;
@@ -425,52 +276,35 @@ border-top:1px solid #ffffff08;
 border-bottom:1px solid #ffffff08;
 }
 
-.club{
+.transfer-team{
 display:flex;
 flex-direction:column;
 align-items:center;
+justify-content:center;
 gap:10px;
-text-align:center;
 min-width:0;
+text-align:center;
 }
 
-.club-logo{
-width:68px;
-height:68px;
-display:grid;
-place-items:center;
-border:1px solid #ffffff10;
-border-radius:18px;
-background:#ffffff05;
-transition:.3s;
-}
-
-.transfer-card:hover .club-logo{
-border-color:#22c55e25;
-background:#22c55e08;
-}
-
-.club-logo img{
-width:50px;
-height:50px;
+.transfer-team img{
+width:55px;
+height:55px;
 object-fit:contain;
 }
 
-.club-logo span{
-font-size:25px;
-}
-
-.club strong{
-max-width:100px;
+.transfer-team span{
+max-width:120px;
 overflow:hidden;
 text-overflow:ellipsis;
 white-space:nowrap;
 font-size:12px;
+font-weight:800;
+color:#d1fae5;
 }
 
-.transfer-arrow{
-width:44px;
-height:44px;
+.transfer-teams > b{
+width:42px;
+height:42px;
 display:grid;
 place-items:center;
 margin:auto;
@@ -478,20 +312,19 @@ border:1px solid #22c55e30;
 border-radius:50%;
 background:#22c55e0b;
 color:#22c55e;
-font-size:22px;
-font-weight:900;
+font-size:21px;
 transition:.3s;
 }
 
-.transfer-card:hover .transfer-arrow{
+.transfer-card:hover .transfer-teams > b{
 transform:scale(1.1);
 background:#22c55e15;
 box-shadow:0 0 20px #22c55e18;
 }
 
-/* ================= BOTTOM ================= */
+/* ================= INFO ================= */
 
-.transfer-bottom{
+.transfer-info{
 position:relative;
 z-index:2;
 display:flex;
@@ -499,18 +332,21 @@ justify-content:space-between;
 align-items:center;
 gap:10px;
 padding-top:15px;
-color:#69736d;
-font-size:11px;
 }
 
-.transfer-bottom strong{
+.transfer-info strong{
 color:#facc15;
 font-size:12px;
 }
 
-/* ================= STATE ================= */
+.transfer-info small{
+color:#69736d;
+font-size:10px;
+}
 
-.transfer-state{
+/* ================= STATES ================= */
+
+.transfers-state{
 min-height:250px;
 display:flex;
 flex-direction:column;
@@ -523,113 +359,13 @@ background:#ffffff03;
 color:#78827c;
 }
 
-.transfer-state span{
-font-size:42px;
-}
-
-.transfer-state h3{
+.transfers-state h3{
 margin:12px 0 5px;
 color:#fff;
 }
 
-.transfer-state p{
-margin:0;
-}
-
-.spinner{
-width:36px;
-height:36px;
-margin-bottom:14px;
-border:3px solid #ffffff12;
-border-top-color:#22c55e;
-border-radius:50%;
-animation:spin .8s linear infinite;
-}
-
-@keyframes spin{
-to{
-transform:rotate(360deg);
-}
-}
-
-/* ================= PAGINATION ================= */
-
-.transfers-pagination{
-display:flex;
-justify-content:center;
-align-items:center;
-gap:8px;
-margin-top:45px;
-padding:14px;
-border:1px solid #ffffff0b;
-border-radius:16px;
-background:
-linear-gradient(145deg,#ffffff08,#ffffff02),
-#060906;
-box-shadow:
-0 15px 40px #0008,
-inset 0 1px 0 #ffffff08;
-}
-
-.page-number,
-.page-arrow{
-position:relative;
-width:42px;
-height:42px;
-display:grid;
-place-items:center;
-border:1px solid #ffffff0d;
-border-radius:10px;
-background:#ffffff04;
-color:#89938d;
-font-size:13px;
-font-weight:900;
-cursor:pointer;
-transition:.25s;
-}
-
-.page-number:hover,
-.page-arrow:hover:not(:disabled){
-color:#fff;
-border-color:#22c55e55;
-background:#22c55e0d;
-transform:translateY(-2px);
-box-shadow:
-0 8px 20px #0008,
-0 0 18px #22c55e15;
-}
-
-.page-number.active{
-color:#fff;
-border-color:#22c55e;
-background:
-linear-gradient(145deg,#22c55e,#15803d);
-box-shadow:
-0 6px 20px #22c55e30,
-0 0 25px #22c55e18;
-transform:translateY(-2px);
-}
-
-.page-arrow{
-font-size:18px;
-color:#22c55e;
-}
-
-.page-arrow:disabled{
-opacity:.25;
-cursor:not-allowed;
-transform:none;
-box-shadow:none;
-}
-
-.transfer-page-info{
-margin-top:14px;
-text-align:center;
-color:#66716a;
-font-size:10px;
-font-weight:900;
-letter-spacing:2px;
-text-transform:uppercase;
+.transfers-state span{
+font-size:42px;
 }
 
 /* ================= RESPONSIVE ================= */
@@ -648,6 +384,10 @@ grid-template-columns:repeat(2,1fr);
 
 @media(max-width:650px){
 
+.transfers-page{
+padding:0 0 30px;
+}
+
 .transfers-hero{
 min-height:520px;
 }
@@ -665,59 +405,158 @@ letter-spacing:-2px;
 font-size:14px;
 }
 
+.transfers-heading{
+align-items:flex-start;
+flex-direction:column;
+}
+
+.transfers-heading h2{
+font-size:30px;
+}
+
 .transfers-grid{
 grid-template-columns:1fr;
 }
 
-.section-heading h2{
-font-size:30px;
+.transfer-card{
+padding:18px;
 }
 
-/* MOBILE CONTROLS */
-
-.transfer-controls{
-gap:8px;
-margin-bottom:25px;
+.transfer-player img,
+.player-placeholder{
+width:68px;
+height:68px;
 }
 
-.transfer-btn{
-min-width:0;
-height:42px;
-padding:0 13px;
-font-size:9px;
-letter-spacing:1px;
+.transfer-player h3{
+font-size:18px;
 }
 
-.transfer-btn span{
-font-size:15px;
+.transfer-teams{
+grid-template-columns:1fr 45px 1fr;
 }
 
-/* MOBILE PAGINATION */
-
-.transfers-pagination{
-gap:5px;
-margin-top:30px;
-padding:10px;
-overflow-x:auto;
-justify-content:flex-start;
+.transfer-team img{
+width:48px;
+height:48px;
 }
 
-.page-number,
-.page-arrow{
-min-width:38px;
-width:38px;
-height:38px;
-font-size:12px;
-border-radius:9px;
+.transfer-info{
+align-items:flex-start;
+flex-direction:column;
 }
 
-.page-arrow{
-font-size:16px;
+}
+/* ================= PAGINATION ================= */
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin: 45px 0 12px;
+  flex-wrap: wrap;
 }
 
-.transfer-page-info{
-font-size:9px;
-letter-spacing:1.5px;
+.pagination button {
+  min-width: 42px;
+  height: 42px;
+  padding: 0 13px;
+
+  border: 1px solid #22c55e25;
+  border-radius: 10px;
+
+  background:
+    linear-gradient(145deg, #ffffff08, #ffffff02),
+    #080b09;
+
+  color: #a7b1aa;
+  font-size: 12px;
+  font-weight: 900;
+
+  cursor: pointer;
+  transition: .3s;
+
+  box-shadow: 0 10px 25px #0006;
 }
+
+.pagination button:hover:not(:disabled) {
+  color: #fff;
+  border-color: #22c55e65;
+
+  background:
+    linear-gradient(145deg, #22c55e18, #ffffff03),
+    #080b09;
+
+  box-shadow:
+    0 12px 30px #000,
+    0 0 22px #22c55e18;
+
+  transform: translateY(-2px);
+}
+
+.pagination button.active {
+  color: #030504;
+  background: #22c55e;
+  border-color: #22c55e;
+
+  box-shadow:
+    0 0 25px #22c55e35,
+    0 10px 30px #000;
+}
+
+.pagination button:disabled {
+  opacity: .25;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* Previous / Next */
+
+.pagination button:first-child,
+.pagination button:last-child {
+  padding: 0 17px;
+  color: #22c55e;
+}
+
+.pagination button:first-child:hover:not(:disabled),
+.pagination button:last-child:hover:not(:disabled) {
+  color: #fff;
+  background: #22c55e15;
+}
+
+/* PAGE INFO */
+
+.pagination-info {
+  text-align: center;
+  margin-bottom: 30px;
+
+  color: #69736d;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* MOBILE */
+
+@media(max-width:650px) {
+
+  .pagination {
+    gap: 6px;
+    margin-top: 35px;
+  }
+
+  .pagination button {
+    min-width: 38px;
+    height: 38px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .pagination button:first-child,
+  .pagination button:last-child {
+    padding: 0 13px;
+  }
 
 }

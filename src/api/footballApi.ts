@@ -18,7 +18,12 @@ export type ApiEvent = {
   name?: string;
   date?: string;
   status?: string;
-  league?: { id?: string; name?: string };
+
+  league?: {
+    id?: string;
+    name?: string;
+  };
+
   competitions?: {
     competitors?: Competitor[];
     status?: {
@@ -29,6 +34,7 @@ export type ApiEvent = {
       };
     };
   }[];
+
   home_team?: string;
   away_team?: string;
   home_logo?: string;
@@ -56,34 +62,127 @@ export const LEAGUES = {
   championsLeague: "uefa.champions",
 };
 
-const ESPN_URL =
-  "https://site.api.espn.com/apis/site/v2/sports/soccer";
-
-const BASE_URL = "http://127.0.0.1:5000/api";
+const BASE_URL = "http://127.0.0.1:5174/api";
 
 async function fetchJSON(url: string) {
-  const response = await fetch(url, { cache: "no-store" });
+  const response = await fetch(url, {
+    cache: "no-store",
+  });
 
-  if (!response.ok)
+  if (!response.ok) {
     throw new Error(`Server Error ${response.status}`);
+  }
 
-  const data = await response.json();
-
-  return data;
+  return response.json();
 }
 
-/* MATCHES */
+/* تحويل بيانات MySQL إلى الشكل الذي تستخدمه الواجهة */
+
+function convertMatch(match: any): ApiEvent {
+  let state = "pre";
+
+  const status = String(match.status || "").toUpperCase();
+
+  if (
+    status.includes("LIVE") ||
+    status.includes("IN_PROGRESS")
+  ) {
+    state = "in";
+  }
+
+  if (
+    status.includes("FULL_TIME") ||
+    status.includes("FINISHED") ||
+    status.includes("FINAL")
+  ) {
+    state = "post";
+  }
+
+  return {
+    id: match.source_id || match.id,
+
+    name: `${match.home_team} vs ${match.away_team}`,
+
+    date: match.match_date,
+
+    status: match.status,
+
+    league: {
+      id: match.league_id || "",
+      name: match.league_name || "",
+    },
+
+    home_team: match.home_team,
+    away_team: match.away_team,
+
+    home_logo: match.home_logo,
+    away_logo: match.away_logo,
+
+    match_date: match.match_date,
+
+    score_home: Number(match.score_home || 0),
+    score_away: Number(match.score_away || 0),
+
+    competitions: [
+      {
+        competitors: [
+          {
+            homeAway: "home",
+            team: {
+              displayName: match.home_team,
+              logo: match.home_logo || "",
+            },
+            score: String(match.score_home ?? 0),
+          },
+          {
+            homeAway: "away",
+            team: {
+              displayName: match.away_team,
+              logo: match.away_logo || "",
+            },
+            score: String(match.score_away ?? 0),
+          },
+        ],
+
+        status: {
+          type: {
+            state,
+            detail: match.status || "",
+            description: match.status || "",
+          },
+        },
+      },
+    ],
+  };
+}
+
+/* MATCHES - من السيرفر فقط */
 
 export async function getMatches(
-  league: string = LEAGUES.premierLeague
+  league?: string,
+  date?: string
 ): Promise<ApiEvent[]> {
-  const data = await fetchJSON(
-    `${ESPN_URL}/${league}/scoreboard`
-  );
+  const data = await fetchJSON(`${BASE_URL}/matches`);
 
-  return Array.isArray(data?.events)
-    ? data.events
-    : [];
+  let matches = Array.isArray(data)
+    ? data
+    : data?.matches || [];
+
+  if (league) {
+    matches = matches.filter(
+      (m: any) =>
+        m.league_id === league
+    );
+  }
+
+  if (date) {
+    matches = matches.filter(
+      (m: any) =>
+        String(m.match_date).slice(0, 10) === date
+    );
+  }
+
+  return matches.map(convertMatch);
 }
 
 /* MATCH DETAILS */
@@ -104,18 +203,7 @@ export async function getMatchDetails(
 /* FEATURED */
 
 export async function getFeaturedMatches(): Promise<ApiEvent[]> {
-  const leagues = Object.values(LEAGUES);
-
-  const results = await Promise.allSettled(
-    leagues.map(getMatches)
-  );
-
-  const matches: ApiEvent[] = [];
-
-  results.forEach((result) => {
-    if (result.status === "fulfilled")
-      matches.push(...result.value);
-  });
+  const matches = await getMatches();
 
   return matches
     .filter((m) => m.date)
@@ -127,7 +215,7 @@ export async function getFeaturedMatches(): Promise<ApiEvent[]> {
     .slice(0, 6);
 }
 
-/* BACKEND MATCHES */
+/* BACKEND MATCH */
 
 export type BackendMatch = {
   id: number;
@@ -149,11 +237,13 @@ export type BackendMatch = {
 export async function getBackendMatches(): Promise<BackendMatch[]> {
   const data = await fetchJSON(`${BASE_URL}/matches`);
 
-  if (Array.isArray(data))
+  if (Array.isArray(data)) {
     return data;
+  }
 
-  if (Array.isArray(data?.matches))
+  if (Array.isArray(data?.matches)) {
     return data.matches;
+  }
 
   throw new Error("Invalid matches response");
 }
@@ -162,12 +252,36 @@ export async function getBackendMatches(): Promise<BackendMatch[]> {
 
 export async function getLeagues(): Promise<League[]> {
   return [
-    { id: "eng.1", name: "Premier League", country: "England" },
-    { id: "esp.1", name: "La Liga", country: "Spain" },
-    { id: "ger.1", name: "Bundesliga", country: "Germany" },
-    { id: "ita.1", name: "Serie A", country: "Italy" },
-    { id: "fra.1", name: "Ligue 1", country: "France" },
-    { id: "uefa.champions", name: "Champions League", country: "Europe" },
+    {
+      id: "eng.1",
+      name: "Premier League",
+      country: "England",
+    },
+    {
+      id: "esp.1",
+      name: "La Liga",
+      country: "Spain",
+    },
+    {
+      id: "ger.1",
+      name: "Bundesliga",
+      country: "Germany",
+    },
+    {
+      id: "ita.1",
+      name: "Serie A",
+      country: "Italy",
+    },
+    {
+      id: "fra.1",
+      name: "Ligue 1",
+      country: "France",
+    },
+    {
+      id: "uefa.champions",
+      name: "Champions League",
+      country: "Europe",
+    },
   ];
 }
 
