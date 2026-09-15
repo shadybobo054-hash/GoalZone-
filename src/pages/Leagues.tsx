@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import "./Leagues.css";
@@ -10,8 +11,8 @@ type League = {
 };
 
 type Match = {
-  league_id: string | null;
-  status: string;
+  league_id?: string | null;
+  status?: string | null;
 };
 
 const LEAGUES: League[] = [
@@ -58,24 +59,40 @@ export default function Leagues() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/matches")
-      .then((res) => res.json())
-      .then((data) => {
-        setMatches(Array.isArray(data) ? data : []);
+    fetch("http://127.0.0.1:5174/api/matches")
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed");
+        return res.json();
       })
-      .catch(() => setMatches([]))
-      .finally(() => setLoading(false));
+      .then((data) => {
+        const list = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.matches)
+          ? data.matches
+          : [];
+
+        setMatches(list);
+      })
+      .catch((error) => {
+        console.error("Leagues error:", error);
+        setMatches([]);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  const count = (id: string) =>
-    matches.filter((m) => m.league_id === id).length;
+  const count = (leagueId: string) => {
+    return matches.filter((match) => match.league_id === leagueId).length;
+  };
 
-  const liveCount = (id: string) =>
-    matches.filter(
-      (m) =>
-        m.league_id === id &&
-        /LIVE|IN PROGRESS|HALFTIME|1H|2H/i.test(m.status)
+  const liveCount = (leagueId: string) => {
+    return matches.filter(
+      (match) =>
+        match.league_id === leagueId &&
+        /LIVE|IN PROGRESS|HALFTIME|1H|2H/i.test(match.status || "")
     ).length;
+  };
 
   const featured = LEAGUES[0];
 
@@ -109,6 +126,7 @@ export default function Leagues() {
             <img src={featured.logo} alt={featured.name} />
 
             <strong>{featured.name}</strong>
+
             <small>{featured.country}</small>
 
             <Link to="/matches">EXPLORE LEAGUE →</Link>
@@ -120,6 +138,7 @@ export default function Leagues() {
         <header className="section-title">
           <div>
             <span>COMPETITIONS</span>
+
             <h2>
               Football <b>Leagues</b>
             </h2>
@@ -165,7 +184,9 @@ export default function Leagues() {
             return (
               <article className="league-card" key={league.id}>
                 <div className="league-card-top">
-                  <span>0{index + 2}</span>
+                  <span>
+                    {String(index + 2).padStart(2, "0")}
+                  </span>
 
                   {live > 0 && (
                     <b className="live-tag">
@@ -206,3 +227,4 @@ export default function Leagues() {
     </main>
   );
 }
+
